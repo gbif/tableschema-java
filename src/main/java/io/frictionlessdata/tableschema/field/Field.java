@@ -234,17 +234,15 @@ public abstract class Field<T> {
     public T castValue(String value, boolean enforceConstraints, Map<String, Object> options) throws InvalidCastException, ConstraintsException{
         if(this.type.isEmpty()){
             throw new InvalidCastException("Property 'type' must not be empty");
-        } else if (StringUtils.isEmpty(value)) {
-            return null;
         } else {
             try{
-                T castValue = parseValue(value, format, options);
+                T castValue = StringUtils.isEmpty(value) ? null : parseValue(value, format, options);
             
                 // Check for constraint violations
                 if(enforceConstraints && this.constraints != null){
                     Map<String, Object> violatedConstraints = checkConstraintViolations(castValue);
                     if(!violatedConstraints.isEmpty()){
-                        throw new ConstraintsException("Violated "+ violatedConstraints.size()+" contstraints");
+                        throw new ConstraintsException("Field [" + this.name + "] value [" + value + "] violates constraint(s) " + violatedConstraints);
                     }
                 }
                 
@@ -454,7 +452,7 @@ public abstract class Field<T> {
         }
         
         // The value of the field must exactly match a value in the enum array.
-        if(this.constraints.containsKey(CONSTRAINT_KEY_ENUM)){
+        if(this.constraints.containsKey(CONSTRAINT_KEY_ENUM) && value != null){
             boolean violatesEnumConstraint = true;
             
             if(value instanceof String){
