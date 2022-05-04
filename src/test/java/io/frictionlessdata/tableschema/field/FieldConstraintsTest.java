@@ -42,7 +42,7 @@ public class FieldConstraintsTest {
         Assert.assertTrue(violatedConstraints.containsKey(Field.CONSTRAINT_KEY_REQUIRED));
         Assert.assertTrue((boolean)violatedConstraints.get(Field.CONSTRAINT_KEY_REQUIRED));
 
-        Assert.assertNull(field.castValue(null));
+        Assert.assertTrue(violatedConstraints.containsKey(Field.CONSTRAINT_KEY_REQUIRED));
     }
 
     @Test
