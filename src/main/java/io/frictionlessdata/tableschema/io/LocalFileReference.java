@@ -6,9 +6,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class LocalFileReference implements FileReference<File> {
-    private File basePath;
-    private File inputFile;
-    private String relativePath;
+    private final File basePath;
+    private final File inputFile;
+    private final String relativePath;
     private boolean isInArchive;
     private FileInputStream is;
 
@@ -30,12 +30,12 @@ public class LocalFileReference implements FileReference<File> {
     }
 
     @Override
-    public InputStream getInputStream() throws Exception {
+    public InputStream getInputStream() throws IOException {
         if (this.isInArchive) {
             ZipFile zipFile = new ZipFile(basePath);
             ZipEntry entry = findZipEntry(zipFile, relativePath);
             if (null == entry) {
-                throw new FileNotFoundException(basePath.toString()+File.separator+relativePath);
+                throw new FileNotFoundException(basePath+File.separator+relativePath);
             }
             return zipFile.getInputStream(entry);
         } else {

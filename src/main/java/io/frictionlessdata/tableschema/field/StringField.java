@@ -2,10 +2,12 @@ package io.frictionlessdata.tableschema.field;
 
 import io.frictionlessdata.tableschema.exception.ConstraintsException;
 import io.frictionlessdata.tableschema.exception.InvalidCastException;
+import io.frictionlessdata.tableschema.exception.TypeInferringException;
 import org.apache.commons.validator.routines.EmailValidator;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,12 +38,17 @@ public class StringField extends Field<String> {
     }
 
     public StringField(String name, String format, String title, String description,
-                       URI rdfType, Map constraints, Map options){
+                       URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
         super(name, FIELD_TYPE_STRING, format, title, description, rdfType, constraints, options);
     }
 
     @Override
-    public String parseValue(String value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+    public boolean isCompatibleValue(String value, String format) {
+        return true;
+    }
+
+    @Override
+    public String parseValue(String value, String format, Map<String, Object> options) throws TypeInferringException  {
         return value;
     }
 
@@ -50,6 +57,15 @@ public class StringField extends Field<String> {
         return value;
     }
 
+    @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        if (value instanceof byte[]) {
+            byte[] encode = Base64.getEncoder().encode((byte[]) value);
+            String retVal = new String(encode);
+            return retVal;
+        }
+        return value.toString();
+    }
 
     /**
      * Given a value, try to parse the format.
@@ -84,5 +100,10 @@ public class StringField extends Field<String> {
         } catch (URISyntaxException ex) {
             return FIELD_FORMAT_DEFAULT;
         }
+    }
+
+    @Override
+    String checkMinimumContraintViolated(String value) {
+        return null;
     }
 }

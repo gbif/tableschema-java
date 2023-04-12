@@ -6,6 +6,7 @@ import io.frictionlessdata.tableschema.schema.Schema;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -26,7 +27,7 @@ public class TableIterator<T> implements Iterator<T> {
 
     TableIterator() {}
 
-    public TableIterator(Table table) throws Exception{
+    public TableIterator(Table table) {
         this(table, false, false, true, false);
     }
 
@@ -35,7 +36,7 @@ public class TableIterator<T> implements Iterator<T> {
             boolean keyed,
             boolean extended,
             boolean cast,
-            boolean relations) throws Exception{
+            boolean relations){
 
         this.init(table);
         this.keyed = keyed;
@@ -44,12 +45,12 @@ public class TableIterator<T> implements Iterator<T> {
         this.relations = relations;
     }
 
-    void init(Table table) throws Exception{
+    void init(Table table) {
         this.mapping = table.getSchemaHeaderMapping();
         this.headers = table.getHeaders();
         this.schema = table.getSchema();
         table.validate();
-        this.wrappedIterator = table.getDataSourceFormat().iterator();
+        this.wrappedIterator = table.getTableDataSource().iterator();
     }
 
 
@@ -70,7 +71,7 @@ public class TableIterator<T> implements Iterator<T> {
         if (null != this.schema) {
             rowLength = Math.max(row.length, this.schema.getFields().size());
         }
-        Map<String, Object> keyedRow = new HashMap<>();
+        Map<String, Object> keyedRow = new LinkedHashMap<>();
         Object[] extendedRow;
         Object[] castRow = new Object[rowLength];
         Object[] plainRow = new Object[rowLength];
@@ -79,8 +80,17 @@ public class TableIterator<T> implements Iterator<T> {
         if(this.schema != null){
             for(int i = 0; i < rowLength; i++){
                 Field field = this.schema.getFields().get(i);
-                Integer mappedKey = mapping.get(i);
                 Object val = null;
+                // if the CSVFormat does not specify a header row, mapping will be null and we use the
+                // row order from the Schema
+                Integer mappedKey = i;
+                if (null != mapping) {
+                    if (null != mapping.get(i))
+                        mappedKey = mapping.get(i);
+                    else
+                        mappedKey = null;
+
+                }
                 // null keys can happen for JSON arrays of JSON objects because
                 // null values will lead to missing entries
                 if (null != mappedKey) {

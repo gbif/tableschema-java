@@ -5,13 +5,10 @@ import io.frictionlessdata.tableschema.exception.InvalidCastException;
 import io.frictionlessdata.tableschema.exception.TypeInferringException;
 
 import java.net.URI;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalField;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,18 +26,18 @@ public class DateField extends Field<LocalDate> {
     }
 
     public DateField(String name, String format, String title, String description,
-                     URI rdfType, Map constraints, Map options){
+                     URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
         super(name, FIELD_TYPE_DATE, format, title, description, rdfType, constraints, options);
     }
 
     @Override
     public LocalDate parseValue(String value, String format, Map<String, Object> options)
-            throws InvalidCastException, ConstraintsException {
+            throws TypeInferringException {
 
         Pattern pattern = Pattern.compile(REGEX_DATE);
         Matcher matcher = pattern.matcher(value);
 
-        if(matcher.matches()){
+        if (matcher.matches() && ((null == format) || format.equals("default"))) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             TemporalAccessor dt = formatter.parse(value);
 
@@ -55,44 +52,63 @@ public class DateField extends Field<LocalDate> {
                     by Python / C standard strptime using <PATTERN>). Example for "format": "%d/%m/%y" which
                     would correspond to dates like: 30/11/14
                  */
-                String regex = format
-                        .replaceAll("%d", "dd")
-                        .replaceAll("%m", "MM")
-                        .replaceAll("%y", "yy");
+                String regex = parseDateFormat(format);
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(regex);
-                try {
-                    return LocalDate.from(formatter.parse(value));
-                } catch (DateTimeParseException ex) {
-                    regex = format
-                            .replaceAll("%d", "dd")
-                            .replaceAll("%m", "MM")
-                            .replaceAll("%y", "yyyy");
-
-                    formatter = DateTimeFormatter.ofPattern(regex);
-                    return LocalDate.from(formatter.parse(value));
-                }
+                return LocalDate.from(formatter.parse(value));
             }
             throw new TypeInferringException();
         }
     }
 
+
     @Override
     public Object formatValueForJson(LocalDate value) throws InvalidCastException, ConstraintsException {
         if (null == value)
             return null;
-        return value.toString();
+        if ((null == format) || format.equals("default")) {
+            return DateTimeFormatter.ISO_DATE.format(value);
+        }
+        String translatedFormat = parseDateFormat(format);
+        return value.format(DateTimeFormatter.ofPattern(translatedFormat));
     }
 
     @Override
     public String formatValueAsString(LocalDate value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
         if (null == value)
-            return null;
-        return value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        return null;
+        if ((null == format) || format.equals("default")) {
+            return DateTimeFormatter.ISO_DATE.format(value);
+        }
+        String translatedFormat = parseDateFormat(format);
+        return value.format(DateTimeFormatter.ofPattern(translatedFormat));
     }
 
+    @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        return value.toString();
+    }
 
     @Override
     public String parseFormat(String value, Map<String, Object> options) {
         return "default";
+    }
+
+    @Override
+    LocalDate checkMinimumContraintViolated(LocalDate value) {
+        LocalDate minDate = (LocalDate)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
+        if(value.isBefore(minDate)){
+            return minDate;
+        }
+        return null;
+    }
+
+    private String parseDateFormat(String cString) {
+        String retVal = cString;
+        retVal = retVal.replaceAll("%d", "dd");
+        retVal = retVal.replaceAll("%m", "MM");
+        retVal = retVal.replaceAll("%y", "yy");
+        retVal = retVal.replaceAll("%Y", "yyyy");
+
+        return retVal;
     }
 }

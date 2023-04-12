@@ -1,34 +1,33 @@
 package io.frictionlessdata.tableschema.table_tests;
 
-import io.frictionlessdata.tableschema.TestHelper;
-import io.frictionlessdata.tableschema.datasourceformat.CsvDataSourceFormat;
-import io.frictionlessdata.tableschema.datasourceformat.DataSourceFormat;
-import io.frictionlessdata.tableschema.exception.TableValidationException;
-import io.frictionlessdata.tableschema.schema.Schema;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.frictionlessdata.tableschema.Table;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import io.frictionlessdata.tableschema.exception.TableSchemaException;
+import io.frictionlessdata.tableschema.exception.TableValidationException;
 import io.frictionlessdata.tableschema.field.*;
+import io.frictionlessdata.tableschema.schema.Schema;
 import org.apache.commons.csv.CSVFormat;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import static io.frictionlessdata.tableschema.TestHelper.getTestDataDirectory;
 
 
 public class TableOtherTest {
+
 
     private static final String populationTestJson =  "[" +
         "{" +
@@ -79,23 +78,18 @@ public class TableOtherTest {
             new Object[]{"rome",2017,2860000}
         };
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Test
     public void testReadFromValidJSONArrayWithSchema() throws Exception{
         File schemaFile = new File(getTestDataDirectory(), "schema/population_schema.json");
         Schema schema = Schema.fromJson (schemaFile, true);
-        Table table = Table.fromSource(populationTestJson, schema, DataSourceFormat.getDefaultCsvFormat());
+        Table table = Table.fromSource(populationTestJson, schema, TableDataSource.getDefaultCsvFormat());
 
-        Assert.assertEquals(3, table.read().size());
+        Assertions.assertEquals(3, table.read().size());
         Schema expectedSchema = Schema.fromJson(populationSchema, true);
         Table expectedTable = Table.fromSource(new File("data/population.csv")
-            , getTestDataDirectory(), expectedSchema, DataSourceFormat.getDefaultCsvFormat());
-        Assert.assertEquals(expectedTable, table);
+            , getTestDataDirectory(), expectedSchema, TableDataSource.getDefaultCsvFormat());
+        Assertions.assertEquals(expectedTable, table);
     }
 
 
@@ -114,7 +108,7 @@ public class TableOtherTest {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode reference = objectMapper.readTree(referenceContent);
         JsonNode actual = objectMapper.readTree(s);
-        Assert.assertEquals(reference.textValue(), actual.textValue());
+        Assertions.assertEquals(reference.textValue(), actual.textValue());
     }
 
     @Test
@@ -131,7 +125,7 @@ public class TableOtherTest {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode reference = objectMapper.readTree(referenceContent);
         JsonNode actual = objectMapper.readTree(s);
-        Assert.assertEquals(reference.textValue(), actual.textValue());
+        Assertions.assertEquals(reference.textValue(), actual.textValue());
     }
 
 
@@ -145,25 +139,25 @@ public class TableOtherTest {
         File schemaFile = new File(getTestDataDirectory(), "schema/population_schema_additional_field.json");
         Schema schema = Schema.fromJson (schemaFile, true);
         Table table = Table.fromSource(new File("data/population.json")
-            , getTestDataDirectory(), schema, DataSourceFormat.getDefaultCsvFormat());
+            , getTestDataDirectory(), schema, TableDataSource.getDefaultCsvFormat());
         List<Object[]> data = table.read();
-        Assert.assertEquals(3, data.size());
+        Assertions.assertEquals(3, data.size());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode populationTest = objectMapper.readTree(populationTestJson);
 
         for (int i = 0; i < data.size(); i++) {
             Object[] row = data.get(i);
             JsonNode expectedObj = populationTest.get(i);
-            Assert.assertEquals(4, row.length);
+            Assertions.assertEquals(4, row.length);
             for (int j = 0; j < row.length; j++) {
                 if (j == 0) {
-                    Assert.assertEquals(expectedObj.get("city").asText(), row[j]);
+                    Assertions.assertEquals(expectedObj.get("city").asText(), row[j]);
                 } else if (j == 1) {
-                    Assert.assertNull(row[j]);
+                    Assertions.assertNull(row[j]);
                 } else if (j == 2) {
-                    Assert.assertEquals(expectedObj.get("year").toString(), row[j].toString());
+                    Assertions.assertEquals(expectedObj.get("year").toString(), row[j].toString());
                 } else if (j == 3) {
-                    Assert.assertEquals(expectedObj.get("population").bigIntegerValue(), row[j]);
+                    Assertions.assertEquals(expectedObj.get("population").bigIntegerValue(), row[j]);
                 }
             }
         }
@@ -173,58 +167,58 @@ public class TableOtherTest {
     public void testInferTypesIntAndDates() throws Exception{
         Table table = Table.fromSource(new File ("dates_data.csv"), getTestDataDirectory());
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode schema = objectMapper.readTree(table.inferSchema().getJson());
+        JsonNode schema = objectMapper.readTree(table.inferSchema().asJson());
         JsonNode schemaFiles = schema.get("fields");
 
         // The field names are the same as the name of the type we are expecting to be inferred.
         for(int i=0; i< schemaFiles.size(); i++) {
             JsonNode node = schemaFiles.get(i);
-            Assert.assertEquals(node.get("name").asText(), node.get("type").asText());
+            Assertions.assertEquals(node.get("name").asText(), node.get("type").asText());
         }
     }
-    //TODO not sure how the test should correctly regard 1 as integer and as boolean at another time
-    /*
+
+
     @Test
     public void testInferTypesIntBoolAndGeopoints() throws Exception{
-        Table table = new Table(new File ("int_bool_geopoint_data.csv"), getTestDataDirectory());
-        //String sourceFileAbsPath = TableOtherTest.class.getResource("/fixtures/int_bool_geopoint_data.csv").getPath();
-        //Table table = new Table(sourceFileAbsPath);
+        Table table = Table.fromSource(new File ("int_bool_geopoint_data.csv"), getTestDataDirectory());
 
         // Infer
         Schema schema = table.inferSchema();
 
-        Iterator<Field> iter = schema.getFields().iterator();
+        Iterator<Field<?>> iter = schema.getFields().iterator();
 
         // The field names are the same as the name of the type we are expecting to be inferred.
         // So if type is set then in means that inferral worked.
         while(iter.hasNext()){
-            Assert.assertEquals(iter.next().getName(), iter.next().getType());
+            Field<?> field = iter.next();
+            String name = field.getName();
+            String type = field.getType();
+            Assertions.assertEquals(name, type);
         }
-    }*/
+    }
 
-    // FIXME too slow
-/*
     @Test
+    @DisplayName("Infer Schema from huge Table")
     public void testInferSchemaFromHugeTable() throws Exception{
         File f = new File("data/gdp.csv");
-        Table table = new Table(f, getTestDataDirectory());
-        Assert.assertEquals(11507, table.read().size());
+        Table table = Table.fromSource(f, getTestDataDirectory());
+        Assertions.assertEquals(11507, table.read().size());
         Schema schema = table.inferSchema(10);
         File schemaFile = new File(getTestDataDirectory(), "schema/gdp_schema.json");
         Schema expectedSchema = null;
         try (FileInputStream fis = new FileInputStream(schemaFile)) {
-            expectedSchema = new Schema(fis, false);
+            expectedSchema = Schema.fromJson(fis, false);
         }
 
         if (!expectedSchema.equals(schema)) {
             for (int i = 0; i < expectedSchema.getFields().size(); i++) {
                 Field expectedField = expectedSchema.getFields().get(i);
                 Field actualField = schema.getFields().get(i);
-                Assert.assertEquals(expectedField,actualField);
+                Assertions.assertEquals(expectedField,actualField);
             }
         }
-        Assert.assertEquals(expectedSchema, schema);
-    }*/
+        Assertions.assertEquals(expectedSchema, schema);
+    }
 
     @Test
     public void testIterateCastKeyedData() throws Exception{
@@ -234,20 +228,20 @@ public class TableOtherTest {
 
         // Fetch the data and apply the schema
         File file = new File("data/employee_data.csv");
-        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, DataSourceFormat.getDefaultCsvFormat());
+        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, TableDataSource.getDefaultCsvFormat());
 
-        Iterator<Map<String, Object>> iter = employeeTable.keyedIterator(false, false, false);
+        Iterator<Map<String, Object>> iter = employeeTable.mappingIterator(false, false, false);
 
         while(iter.hasNext()){
             Map row = iter.next();
 
-            Assert.assertEquals(BigInteger.class, row.get("id").getClass());
-            Assert.assertEquals(String.class, row.get("name").getClass());
-            Assert.assertEquals(LocalDate.class, row.get("dateOfBirth").getClass());
-            Assert.assertEquals(Boolean.class, row.get("isAdmin").getClass());
-            Assert.assertEquals(double[].class, row.get("addressCoordinates").getClass());
-            Assert.assertEquals(Duration.class, row.get("contractLength").getClass());
-            Assert.assertTrue(HashMap.class.isAssignableFrom(row.get("info").getClass()));
+            Assertions.assertEquals(BigInteger.class, row.get("id").getClass());
+            Assertions.assertEquals(String.class, row.get("name").getClass());
+            Assertions.assertEquals(LocalDate.class, row.get("dateOfBirth").getClass());
+            Assertions.assertEquals(Boolean.class, row.get("isAdmin").getClass());
+            Assertions.assertEquals(double[].class, row.get("addressCoordinates").getClass());
+            Assertions.assertEquals(Duration.class, row.get("contractLength").getClass());
+            Assertions.assertTrue(HashMap.class.isAssignableFrom(row.get("info").getClass()));
         }
     }
 
@@ -258,7 +252,7 @@ public class TableOtherTest {
         File file = new File("data/simple_data.csv");
         Table table = Table.fromSource(file, testDataDir);
 
-        Assert.assertEquals("[id, title]", Arrays.toString(table.getHeaders()));
+        Assertions.assertEquals("[id, title]", Arrays.toString(table.getHeaders()));
     }
 
 
@@ -269,9 +263,9 @@ public class TableOtherTest {
         File file = new File("data/population.json");
         Schema schema = Schema.fromJson(new File(testDataDir, "schema/employee_schema.json"), true);
 
-        Table table = Table.fromSource(file, testDataDir, schema, DataSourceFormat.getDefaultCsvFormat());
-        exception.expect(TableValidationException.class);
-        table.validate();
+        Table table = Table.fromSource(file, testDataDir, schema, TableDataSource.getDefaultCsvFormat());
+
+        Assertions.assertThrows(TableValidationException.class, table::validate);
     }
 
 
@@ -281,9 +275,9 @@ public class TableOtherTest {
         File file = new File("data/simple_data.csv");
         Table table = Table.fromSource(file, testDataDir);
 
-        Assert.assertEquals(3, table.read().size());
-        Assert.assertEquals("1", table.read().get(0)[0]);
-        Assert.assertEquals("foo", table.read().get(0)[1]);
+        Assertions.assertEquals(3, table.read().size());
+        Assertions.assertEquals("1", table.read().get(0)[0]);
+        Assertions.assertEquals("foo", table.read().get(0)[1]);
     }
 
     @Test
@@ -295,10 +289,10 @@ public class TableOtherTest {
 
         // Fetch the data and apply the schema
         File file = new File("data/employee_data.csv");
-        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, DataSourceFormat.getDefaultCsvFormat());
+        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, TableDataSource.getDefaultCsvFormat());
 
         // We will iterate the rows and these are the values classes we expect:
-        Class[] expectedTypes = new Class[]{
+        Class<?>[] expectedTypes = new Class<?>[]{
             BigInteger.class,
             String.class,
             LocalDate.class,
@@ -309,51 +303,50 @@ public class TableOtherTest {
         };
 
         List<Object[]> data = employeeTable.read(true);
-        Iterator<Object[]> iter = data.iterator();
 
-        while(iter.hasNext()){
-            Object[] row = iter.next();
-
-            for(int i=0; i<row.length; i++){
-            	Assert.assertTrue(expectedTypes[i].isAssignableFrom(row[i].getClass()));
+        for (Object[] row : data) {
+            for (int i = 0; i < row.length; i++) {
+                Assertions.assertTrue(expectedTypes[i].isAssignableFrom(row[i].getClass()));
             }
         }
     }
 
     @Test
     public void saveTable() throws Exception{
+        final Path tempDirPath = Files.createTempDirectory("tableschema-");
         String createdFileName = "test_data_table.csv";
-        File createdFileDir = folder.newFile(createdFileName).getParentFile();
+
         File testDataDir = getTestDataDirectory();
         File file = new File("data/simple_data.csv");
         Table loadedTable = Table.fromSource(file, testDataDir);
 
-        loadedTable.writeCsv(new File (createdFileDir, createdFileName), CSVFormat.RFC4180);
+        loadedTable.writeCsv(new File (tempDirPath.toFile(), createdFileName), CSVFormat.RFC4180);
 
-        Table readTable = Table.fromSource(new File(createdFileName), createdFileDir);
-        Assert.assertEquals("id", readTable.getHeaders()[0]);
-        Assert.assertEquals("title", readTable.getHeaders()[1]);
-        Assert.assertEquals(3, readTable.read().size());
+        Table readTable = Table.fromSource(new File(createdFileName), tempDirPath.toFile());
+        Assertions.assertEquals("id", readTable.getHeaders()[0]);
+        Assertions.assertEquals("title", readTable.getHeaders()[1]);
+        Assertions.assertEquals(3, readTable.read().size());
     }
 
     @Test
     public void saveTableAlternateSchema() throws Exception{
+        final Path tempDirPath = Files.createTempDirectory("tableschema-");
         String createdFileName = "test_data_table.csv";
-        File createdFileDir = folder.newFile(createdFileName).getParentFile();
+
         File testDataDir = getTestDataDirectory();
         File file = new File("data/population.json");
         Schema schema = Schema.fromJson(new File (testDataDir, "schema/population_schema_alternate.json"), true);
-        Table loadedTable = Table.fromSource(file, testDataDir, schema, DataSourceFormat.getDefaultCsvFormat());
+        Table loadedTable = Table.fromSource(file, testDataDir, schema, TableDataSource.getDefaultCsvFormat());
 
-        loadedTable.writeCsv(new File (createdFileDir, createdFileName), CSVFormat.RFC4180);
+        loadedTable.writeCsv(new File (tempDirPath.toFile(), createdFileName), CSVFormat.RFC4180);
 
-        Table readTable = Table.fromSource(new File(createdFileName), createdFileDir);
+        Table readTable = Table.fromSource(new File(createdFileName), tempDirPath.toFile());
         String[] headers = readTable.getHeaders();
 
-        Assert.assertEquals("year", headers[0]);
-        Assert.assertEquals("city", headers[1]);
-        Assert.assertEquals("population", headers[2]);
-        Assert.assertEquals(3, readTable.read().size());
+        Assertions.assertEquals("year", headers[0]);
+        Assertions.assertEquals("city", headers[1]);
+        Assertions.assertEquals("population", headers[2]);
+        Assertions.assertEquals(3, readTable.read().size());
     }
 
     @Test
@@ -361,33 +354,32 @@ public class TableOtherTest {
         File file = new File("data/employee_data.csv");
         Table table = Table.fromSource(file, getTestDataDirectory());
 
-        exception.expect(TableSchemaException.class);
-        table.read(true);
+        Assertions.assertThrows(TableSchemaException.class, () -> {table.read(true);});
     }
 
     private Schema getEmployeeTableSchema(){
         Schema schema = new Schema();
 
-        Field idField = new IntegerField("id");
+        Field<?> idField = new IntegerField("id");
         schema.addField(idField);
 
-        Field nameField = new StringField("name");
+        Field<?> nameField = new StringField("name");
         schema.addField(nameField);
 
-        Field dobField = new DateField("dateOfBirth");
+        Field<?> dobField = new DateField("dateOfBirth");
         schema.addField(dobField);
 
-        Field isAdminField = new BooleanField("isAdmin");
+        Field<?> isAdminField = new BooleanField("isAdmin");
         schema.addField(isAdminField);
 
-        Field addressCoordinatesField
+        Field<?> addressCoordinatesField
             = new GeopointField("addressCoordinates", Field.FIELD_FORMAT_OBJECT, null, null, null, null, null);
         schema.addField(addressCoordinatesField);
 
-        Field contractLengthField = new DurationField("contractLength");
+        Field<?> contractLengthField = new DurationField("contractLength");
         schema.addField(contractLengthField);
 
-        Field infoField = new ObjectField("info");
+        Field<?> infoField = new ObjectField("info");
         schema.addField(infoField);
 
         return schema;
@@ -403,12 +395,12 @@ public class TableOtherTest {
 
         // Fetch the data and apply the schema
         File file = new File("data/employee_data.csv");
-        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, DataSourceFormat.getDefaultCsvFormat());
+        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, TableDataSource.getDefaultCsvFormat());
 
         CSVFormat expectedFmt = CSVFormat.INFORMIX_UNLOAD_CSV;
         employeeTable.setCsvFormat(expectedFmt);
         CSVFormat testFmt = employeeTable.getCsvFormat();
-        Assert.assertEquals(expectedFmt, testFmt);
+        Assertions.assertEquals(expectedFmt, testFmt);
     }
 
     @Test

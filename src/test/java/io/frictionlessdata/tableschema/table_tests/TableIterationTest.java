@@ -1,13 +1,13 @@
 package io.frictionlessdata.tableschema.table_tests;
 
-import io.frictionlessdata.tableschema.datasourceformat.DataSourceFormat;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.frictionlessdata.tableschema.Table;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import io.frictionlessdata.tableschema.field.*;
 import io.frictionlessdata.tableschema.schema.Schema;
-import io.frictionlessdata.tableschema.Table;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,15 +19,10 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static io.frictionlessdata.tableschema.TestHelper.getTestDataDirectory;
 
 public class TableIterationTest {
-
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
-
 
     @Test
     public void testFetchHeaders() throws Exception{
@@ -36,7 +31,7 @@ public class TableIterationTest {
         File file = new File("data/simple_data.csv");
         Table table = Table.fromSource(file, testDataDir);
 
-        Assert.assertEquals("[id, title]", Arrays.toString(table.getHeaders()));
+        Assertions.assertEquals("[id, title]", Arrays.toString(table.getHeaders()));
     }
 
     @Test
@@ -45,9 +40,9 @@ public class TableIterationTest {
         File file = new File("data/simple_data.csv");
         Table table = Table.fromSource(file, testDataDir);
 
-        Assert.assertEquals(3, table.read().size());
-        Assert.assertEquals("1", table.read().get(0)[0]);
-        Assert.assertEquals("foo", table.read().get(0)[1]);
+        Assertions.assertEquals(3, table.read().size());
+        Assertions.assertEquals("1", table.read().get(0)[0]);
+        Assertions.assertEquals("foo", table.read().get(0)[1]);
     }
 
     @Test
@@ -59,7 +54,7 @@ public class TableIterationTest {
 
         // Fetch the data and apply the schema
         File file = new File("data/employee_data.csv");
-        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, DataSourceFormat.getDefaultCsvFormat());
+        Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, TableDataSource.getDefaultCsvFormat());
 
         // We will iterate the rows and these are the values classes we expect:
         Class[] expectedTypes = new Class[]{
@@ -79,7 +74,7 @@ public class TableIterationTest {
             Object[] row = iter.next();
 
             for(int i=0; i<row.length; i++){
-                Assert.assertTrue(expectedTypes[i].isAssignableFrom(row[i].getClass()));
+                Assertions.assertTrue(expectedTypes[i].isAssignableFrom(row[i].getClass()));
             }
         }
     }
@@ -107,8 +102,8 @@ public class TableIterationTest {
             Object[] row = (Object[])iter.next();
             JsonNode reference = referenceArr.get(i);
 
-            Assert.assertEquals(3, row.length);
-            Assert.assertEquals(i, row[0]);
+            Assertions.assertEquals(3, row.length);
+            Assertions.assertEquals(i, row[0]);
 
             String[] keys = (String[]) row[1];
 
@@ -116,24 +111,24 @@ public class TableIterationTest {
                 String key = keys[j];
                 Object val = ((Object[])row[2])[j];
                 if (val instanceof Boolean) {
-                    Assert.assertEquals(reference.get(key).asText().equals("true"), val);
+                    Assertions.assertEquals(reference.get(key).asText().equals("true"), val);
                 } else if (val instanceof double[]){
                     JsonNode objVal = objectMapper.readTree(reference.get(key).textValue());
                     double lon = objVal.get("lon").asDouble();
                     double valDouble = ((double[]) val)[0];
                     double delta = 0.05;
-                    Assert.assertEquals(lon, valDouble, delta);
+                    Assertions.assertEquals(lon, valDouble, delta);
                 } else if (val instanceof Duration) {
                     Duration testDur = Duration.parse(reference.get(key).textValue());
-                    Assert.assertEquals(testDur, ((Duration)val));
+                    Assertions.assertEquals(testDur, ((Duration)val));
                 } else if (val instanceof Map) {
                     JsonNode objVal = objectMapper.readTree(reference.get(key).textValue());
                     for (Object k : ((Map)val).keySet()) {
                         Object v = ((Map)val).get(k).toString();
-                        Assert.assertEquals(objVal.get((String)k).toString(), v);
+                        Assertions.assertEquals(objVal.get((String)k).toString(), v);
                     }
                 } else {
-                    Assert.assertEquals(reference.get(key).asText(), val.toString());
+                    Assertions.assertEquals(reference.get(key).asText(), val.toString());
                 }
             }
             i++;
@@ -161,11 +156,11 @@ public class TableIterationTest {
             Map<String, Object> row = (Map<String, Object>)iter.next();
             JsonNode reference = referenceArr.get(i);
 
-            Assert.assertEquals(7, row.size());
+            Assertions.assertEquals(7, row.size());
 
             for(String key : row.keySet()){
                 Object val = row.get(key);
-                Assert.assertEquals(reference.get(key).textValue(), val);
+                Assertions.assertEquals(reference.get(key).textValue(), val);
             }
             i++;
         }
@@ -197,14 +192,14 @@ public class TableIterationTest {
             Map<String, Object> row = (Map<String, Object>)iter.next();
             JsonNode reference = referenceArr.get(i);
 
-            Assert.assertEquals(7, row.size());
+            Assertions.assertEquals(7, row.size());
 
             for(String key : row.keySet()){
                 Object val = row.get(key);
                 if (null == reference.get(key)) {
-                    Assert.assertNull(val);
+                    Assertions.assertNull(val);
                 } else {
-                    Assert.assertEquals(reference.get(key).textValue(), val);
+                    Assertions.assertEquals(reference.get(key).textValue(), val);
                 }
             }
             i++;
@@ -232,14 +227,14 @@ public class TableIterationTest {
             Object[] row = (Object[])iter.next();
             JsonNode reference = referenceArr.get(i);
 
-            Assert.assertEquals(3, row.length);
-            Assert.assertEquals(i, row[0]);
+            Assertions.assertEquals(3, row.length);
+            Assertions.assertEquals(i, row[0]);
 
             String[] keys = (String[])row[1];
             for (int j = 0; j < keys.length; j++) {
                 String key = keys[j];
                 String val = ((String[])row[2])[j];
-                Assert.assertEquals(reference.get(key).textValue(), val);
+                Assertions.assertEquals(reference.get(key).textValue(), val);
             }
             i++;
         }
@@ -262,13 +257,13 @@ public class TableIterationTest {
             schema = Schema.fromJson (fis, false);
         }
 
-        Table table = Table.fromSource(csvContent, schema, DataSourceFormat.getDefaultCsvFormat());
+        Table table = Table.fromSource(csvContent, schema, TableDataSource.getDefaultCsvFormat());
 
-        Assert.assertEquals(3, table.read().size());
+        Assertions.assertEquals(3, table.read().size());
         List<Object[]> actualData = table.read(true);
         for (int i = 0; i < actualData.size(); i++) {
-            Assert.assertTrue("Expected Number for population figures, CR/LF problem"
-                    , actualData.get(i)[2] instanceof Number);
+            Assertions.assertTrue(actualData.get(i)[2] instanceof Number, "Expected Number " +
+                    "for population figures, CR/LF problem");
         }
     }
 

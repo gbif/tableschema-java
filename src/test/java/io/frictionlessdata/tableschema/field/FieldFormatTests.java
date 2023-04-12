@@ -1,8 +1,6 @@
 package io.frictionlessdata.tableschema.field;
 
-import io.frictionlessdata.tableschema.exception.InvalidCastException;
 import io.frictionlessdata.tableschema.exception.TypeInferringException;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,9 +19,9 @@ class FieldFormatTests {
     void formatBooleanField() {
         BooleanField field = new BooleanField("bf");
         String val = field.formatValueAsString(true, null, null);
-        Assert.assertEquals("true", val);
+        Assertions.assertEquals("true", val);
         val = field.formatValueAsString(false, null, null);
-        Assert.assertEquals("false", val);
+        Assertions.assertEquals("false", val);
     }
 
     @Test
@@ -35,9 +33,9 @@ class FieldFormatTests {
 
         BooleanField field = new BooleanField("bf");
         String val = field.formatValueAsString(true, null, options);
-        Assert.assertEquals("da", val);
+        Assertions.assertEquals("da", val);
         val = field.formatValueAsString(false, null, options);
-        Assert.assertEquals("njet", val);
+        Assertions.assertEquals("njet", val);
     }
 
     @Test
@@ -47,7 +45,7 @@ class FieldFormatTests {
         BooleanField field = (BooleanField)BooleanField.fromJson("{'name': 'name', 'type': 'boolean', 'trueValues': ['agreed']}");
 
         // expect exception
-        assertThrows(InvalidCastException.class, () -> field.parseValue("true", null, null));
+        assertThrows(TypeInferringException.class, () -> field.parseValue("true", null, null));
         Boolean val = field.parseValue("agreed", null, null); // True
         Assertions.assertTrue(val);
     }
@@ -59,7 +57,7 @@ class FieldFormatTests {
         BooleanField field = (BooleanField)BooleanField.fromJson("{'name': 'name', 'type': 'boolean', 'falseValues': ['declined']}");
 
         // expect exception
-        assertThrows(InvalidCastException.class, () -> field.parseValue("false", null, null));
+        assertThrows(TypeInferringException.class, () -> field.parseValue("false", null, null));
         Boolean val = field.parseValue("declined", null, null); // false
         Assertions.assertFalse(val);
     }
@@ -69,15 +67,15 @@ class FieldFormatTests {
     void formatGeopointField() {
         GeopointField field = new GeopointField("gpf");
         String val = field.formatValueAsString(new double[]{123.45, 56.789}, null, null);
-        Assert.assertEquals("123.45,56.789", val);
+        Assertions.assertEquals("123.45,56.789", val);
         val = field.formatValueAsString(new double[]{123.45, 56.789}, Field.FIELD_FORMAT_DEFAULT, null);
-        Assert.assertEquals("123.45,56.789", val);
+        Assertions.assertEquals("123.45,56.789", val);
         val = field.formatValueAsString(new double[]{123.45, 56.789}, Field.FIELD_FORMAT_ARRAY, null);
-        Assert.assertEquals("[123.45,56.789]", val);
+        Assertions.assertEquals("[123.45,56.789]", val);
         val = field.formatValueAsString(new double[]{123.45, 56.789}, Field.FIELD_FORMAT_OBJECT, null);
-        Assert.assertEquals("{\"lon\": 123.45, \"lat\":56.789}", val);
+        Assertions.assertEquals("{\"lon\": 123.45, \"lat\":56.789}", val);
         val = field.formatValueAsString(new double[]{123.45, 56.789}, "invalid", null);
-        Assert.assertNull(val);
+        Assertions.assertNull(val);
     }
 
 

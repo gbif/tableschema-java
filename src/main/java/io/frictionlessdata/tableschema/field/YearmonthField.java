@@ -25,13 +25,13 @@ public class YearmonthField extends Field<YearMonth> {
     }
 
     public YearmonthField(String name, String format, String title, String description,
-                          URI rdfType, Map constraints, Map options) {
+                          URI rdfType, Map<String, Object> constraints, Map<String, Object> options) {
         super(name, FIELD_TYPE_YEARMONTH, format, title, description, rdfType, constraints, options);
     }
 
     @Override
     public YearMonth parseValue(String value, String format, Map<String, Object> options)
-            throws InvalidCastException, ConstraintsException {
+            throws TypeInferringException {
         Pattern pattern = Pattern.compile(REGEX_YEARMONTH);
         Matcher matcher = pattern.matcher(value);
 
@@ -54,7 +54,21 @@ public class YearmonthField extends Field<YearMonth> {
     }
 
     @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        return value.toString();
+    }
+
+    @Override
     public String parseFormat(String value, Map<String, Object> options) {
         return "default";
+    }
+
+    @Override
+    YearMonth checkMinimumContraintViolated(YearMonth value) {
+        YearMonth minDate = (YearMonth)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
+        if(value.isBefore(minDate)){
+            return minDate;
+        }
+        return null;
     }
 }

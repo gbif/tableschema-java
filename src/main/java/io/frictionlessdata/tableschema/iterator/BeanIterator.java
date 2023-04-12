@@ -2,20 +2,24 @@ package io.frictionlessdata.tableschema.iterator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.introspect.AnnotatedField;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.google.common.util.concurrent.AtomicDouble;
 import io.frictionlessdata.tableschema.Table;
 import io.frictionlessdata.tableschema.annotations.FieldFormat;
 import io.frictionlessdata.tableschema.exception.TableSchemaException;
+import io.frictionlessdata.tableschema.field.ArrayField;
 import io.frictionlessdata.tableschema.field.Field;
 import io.frictionlessdata.tableschema.field.ObjectField;
+import io.frictionlessdata.tableschema.field.StringField;
 import io.frictionlessdata.tableschema.schema.BeanSchema;
 import io.frictionlessdata.tableschema.util.JsonUtil;
 import org.locationtech.jts.geom.Coordinate;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -27,10 +31,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * @param <T> the Bean class this BeanIterator expects
  */
 public class BeanIterator<T> extends TableIterator<T> {
-    private Class<T> type = null;
-    private CsvMapper mapper = new CsvMapper();
+    private final Class<T> type;
 
-    public BeanIterator(Table table,  Class<T> beanType, boolean relations) throws Exception {
+    public BeanIterator(Table table,  Class<T> beanType, boolean relations)  {
         this.type = beanType;
         this.relations = relations;
         init(table);
@@ -40,15 +43,14 @@ public class BeanIterator<T> extends TableIterator<T> {
      * Overrides {@link TableIterator#init(Table)} and instead of copying the Schema from the Table,
      * infers a Schema from the Bean type.
      * @param table The Table to iterate data on
-     * @throws Exception in case header parsing, Schema inferral or Schema validation fails
      */
     @Override
-    void init(Table table) throws Exception{
+    void init(Table table){
         mapping = table.getSchemaHeaderMapping();
         headers = table.getHeaders();
         schema = BeanSchema.infer(type);
         table.validate();
-        wrappedIterator = table.getDataSourceFormat().iterator();
+        wrappedIterator = table.getTableDataSource().iterator();
     }
 
     @Override
@@ -57,15 +59,14 @@ public class BeanIterator<T> extends TableIterator<T> {
         final String[] row = super.wrappedIterator.next();
 
         try {
-            retVal = type.newInstance();
+            retVal = type.getDeclaredConstructor().newInstance();
             for (int i = 0; i < row.length; i++) {
                 String fieldName = headers[i];
-                Field field = schema.getField(fieldName);
+                Field<?> field = schema.getField(fieldName);
                 if (null == field) {
                     continue;
                 }
                 AnnotatedField aF = ((BeanSchema) schema).getAnnotatedField(fieldName);
-
                 FieldFormat annotation = aF.getAnnotation(FieldFormat.class);
                 String fieldFormat = field.getFormat();
                 if (null != annotation) {
@@ -83,12 +84,12 @@ public class BeanIterator<T> extends TableIterator<T> {
                 Object val = field.castValue(row[i]);
                 if (null == val)
                     continue;
-                Class annotatedFieldClass = aF.getRawType();
+                Class<?> annotatedFieldClass = aF.getRawType();
                 aF.fixAccess(true);
                 if (Number.class.isAssignableFrom(annotatedFieldClass)) {
                     setNumberField(retVal, aF, (Number)val);
                 } else if (byte.class.equals(annotatedFieldClass)){
-                    aF.setValue(retVal, new Byte(((BigInteger)val).shortValue()+""));
+                    aF.setValue(retVal, Byte.valueOf(((BigInteger)val).shortValue()+""));
                 } else if (short.class.equals(annotatedFieldClass)){
                     aF.setValue(retVal, ((BigInteger)val).shortValue());
                 } else if (int.class.equals(annotatedFieldClass)){
@@ -101,10 +102,23 @@ public class BeanIterator<T> extends TableIterator<T> {
                     aF.setValue(retVal, ((BigDecimal)val).doubleValue());
                 } else if (UUID.class.equals(annotatedFieldClass)){
                     aF.setValue(retVal, UUID.fromString((String)val));
+                } else if (LocalDate.class.equals(annotatedFieldClass)){
+                    aF.setValue(retVal, val);
+                } else if (LocalTime.class.equals(annotatedFieldClass)){
+                    aF.setValue(retVal, val);
+                } else if (Boolean.class.equals(annotatedFieldClass) || boolean.class.equals(annotatedFieldClass)){
+                    aF.setValue(retVal, val);
                 } else if (Coordinate.class.isAssignableFrom(annotatedFieldClass)) {
                     double[] arr = (double[])val;
                     Coordinate coordinate = new Coordinate(arr[0], arr[1]);
                     aF.setValue(retVal, coordinate);
+                } else if (field instanceof ArrayField){
+                    if (Collection.class.isAssignableFrom(annotatedFieldClass)) {
+                        Object[] convVal = (Object[])val;
+                        aF.setValue(retVal, Arrays.asList(convVal));
+                    } else {
+                        aF.setValue(retVal, JsonUtil.getInstance().convertValue(val, String[].class));
+                    }
                 } else if (field instanceof ObjectField){
                     if (annotatedFieldClass.equals(JsonNode.class)) {
                         aF.setValue(retVal, JsonUtil.getInstance().readValue(val.toString()));
@@ -112,19 +126,23 @@ public class BeanIterator<T> extends TableIterator<T> {
                     	// this conversion method may also be used for the other field types
                         aF.setValue(retVal, JsonUtil.getInstance().convertValue(val, annotatedFieldClass));
                     }
+                } else if (byte[].class.equals(annotatedFieldClass)){
+                    byte[] bytes = Base64.getDecoder().decode(val.toString());
+                    aF.setValue(retVal, bytes);
+                } else if (field instanceof StringField){
+                    aF.setValue(retVal, val.toString());
                 } else {
                     aF.setValue(retVal, val);
                 }
             }
             return retVal;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new TableSchemaException(e);
         }
-
     }
 
     private void setNumberField(T obj, AnnotatedField field, Number val) {
-        Class fClass = field.getRawType();
+        Class<?> fClass = field.getRawType();
         if (fClass.equals(BigDecimal.class)) {
             BigDecimal big = new BigDecimal(val.toString());
             field.setValue(obj, big);

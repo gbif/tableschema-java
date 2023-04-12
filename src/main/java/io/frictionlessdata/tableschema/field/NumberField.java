@@ -52,10 +52,6 @@ public class NumberField extends Field<Number> {
     public Number parseValue(String value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
         String locValue = value.trim();
         try{
-            if (value.equalsIgnoreCase("null"))
-                return null;
-            if (value.length() == 0)
-                return null;
             if(options != null){
                 if(options.containsKey(NUMBER_OPTION_DECIMAL_CHAR)){
                     locValue = locValue.replace((String)options.get(NUMBER_OPTION_DECIMAL_CHAR), NUMBER_DEFAULT_DECIMAL_CHAR);
@@ -129,6 +125,11 @@ public class NumberField extends Field<Number> {
         return value.toString();
     }
 
+    @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        return value.toString();
+    }
+
     private static String formatNumber(String value, Map<String, Object> options) {
         String decSeparator = ".";
         String locValue = value;
@@ -167,5 +168,14 @@ public class NumberField extends Field<Number> {
     @Override
     public String parseFormat(String value, Map<String, Object> options) {
         return "default";
+    }
+
+    @Override
+    Number checkMinimumContraintViolated(Number value) {
+        BigDecimal minNumber = new BigDecimal(this.constraints.get(CONSTRAINT_KEY_MINIMUM).toString());
+        if( new BigDecimal(value.toString()).compareTo(minNumber) < 0 ) {
+            return minNumber;
+        }
+        return null;
     }
 }

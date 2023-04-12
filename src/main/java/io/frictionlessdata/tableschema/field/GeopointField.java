@@ -6,6 +6,7 @@ import io.frictionlessdata.tableschema.exception.ConstraintsException;
 import io.frictionlessdata.tableschema.exception.InvalidCastException;
 import io.frictionlessdata.tableschema.exception.TypeInferringException;
 import io.frictionlessdata.tableschema.util.JsonUtil;
+import org.locationtech.jts.geom.Coordinate;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -22,13 +23,13 @@ public class GeopointField extends Field<double[]> {
     }
 
     public GeopointField(String name, String format, String title, String description,
-                         URI rdfType, Map constraints, Map options){
+                         URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
         super(name, FIELD_TYPE_GEOPOINT, format, title, description, rdfType, constraints, options);
     }
 
     @Override
     public double[] parseValue(String value, String format, Map<String, Object> options)
-            throws InvalidCastException, ConstraintsException {
+            throws TypeInferringException {
         try{
             if(format.equalsIgnoreCase(Field.FIELD_FORMAT_DEFAULT)){
                 String[] geopoint = value.split(", *");
@@ -81,6 +82,9 @@ public class GeopointField extends Field<double[]> {
             }
 
         }catch(Exception e){
+            if (e instanceof TypeInferringException) {
+                throw e;
+            }
             throw new TypeInferringException(e);
         }
     }
@@ -95,6 +99,16 @@ public class GeopointField extends Field<double[]> {
             return "{\"lon\": "+value[0]+", \"lat\":"+value[1]+"}";
         }
         return null;
+    }
+
+    @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        if (value instanceof Coordinate) {
+            Coordinate coor = (Coordinate)value;
+            double[] vals = new double[]{coor.x, coor.y, coor.z};
+            return formatValueAsString(vals, format,options);
+        }
+        return value.toString();
     }
 
     @Override
@@ -126,6 +140,11 @@ public class GeopointField extends Field<double[]> {
         } catch (Exception ex) {
         	return FIELD_FORMAT_DEFAULT;
         }
+    }
+
+    @Override
+    double[] checkMinimumContraintViolated(double[] value) {
+        return null;
     }
 
 }

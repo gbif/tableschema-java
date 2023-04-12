@@ -27,23 +27,23 @@ public class DatetimeField extends Field<ZonedDateTime> {
     }
 
     public DatetimeField(String name, String format, String title, String description,
-                         URI rdfType, Map constraints, Map options){
+                         URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
         super(name, FIELD_TYPE_DATETIME, format, title, description, rdfType, constraints, options);
     }
 
     @Override
     public ZonedDateTime parseValue(String value, String format, Map<String, Object> options)
-        throws InvalidCastException, ConstraintsException {
+            throws TypeInferringException {
 
         Pattern pattern = Pattern.compile(REGEX_DATETIME);
         Matcher matcher = pattern.matcher(value);
 
-        if (matcher.matches()) {
+        if(matcher.matches()){
             TemporalAccessor dt = FORMATTER.parse(value);
 
             return ZonedDateTime.from(dt);
-        } else {
-            throw new TypeInferringException("DateTime field not in ISO 8601 format yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        }else{
+            throw new TypeInferringException("DateTime field not in ISO 8601 format yyyy-MM-dd'T'HH:mm:ss[.SSS]Z");
         }
     }
 
@@ -54,9 +54,24 @@ public class DatetimeField extends Field<ZonedDateTime> {
         return value.format(FORMATTER);
     }
 
+    @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        return value.toString();
+    }
 
     @Override
     public String parseFormat(String value, Map<String, Object> options) {
         return "default";
     }
+
+    @Override
+    ZonedDateTime checkMinimumContraintViolated(ZonedDateTime value) {
+        ZonedDateTime minTime = (ZonedDateTime)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
+        if(value.isBefore(minTime)){
+            return minTime;
+        }
+        return null;
+    }
+
+
 }

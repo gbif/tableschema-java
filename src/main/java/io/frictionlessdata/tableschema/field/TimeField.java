@@ -5,7 +5,6 @@ import io.frictionlessdata.tableschema.exception.InvalidCastException;
 import io.frictionlessdata.tableschema.exception.TypeInferringException;
 
 import java.net.URI;
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -25,12 +24,12 @@ public class TimeField extends Field<LocalTime> {
     }
 
     public TimeField(String name, String format, String title, String description,
-                     URI rdfType, Map constraints, Map options){
+                     URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
         super(name, FIELD_TYPE_TIME, format, title, description, rdfType, constraints, options);
     }
 
     @Override
-    public LocalTime parseValue(String value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+    public LocalTime parseValue(String value, String format, Map<String, Object> options) throws TypeInferringException {
         Pattern pattern = Pattern.compile(REGEX_TIME);
         Matcher matcher = pattern.matcher(value);
 
@@ -57,7 +56,21 @@ public class TimeField extends Field<LocalTime> {
     }
 
     @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        return value.toString();
+    }
+
+    @Override
     public String parseFormat(String value, Map<String, Object> options) {
         return "default";
+    }
+
+    @Override
+    LocalTime checkMinimumContraintViolated(LocalTime value) {
+        LocalTime minTime = (LocalTime)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
+        if(value.isBefore(minTime)){
+           return minTime;
+        }
+        return null;
     }
 }

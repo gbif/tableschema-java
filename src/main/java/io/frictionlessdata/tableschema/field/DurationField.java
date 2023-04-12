@@ -19,13 +19,13 @@ public class DurationField extends Field<Duration> {
     }
 
     public DurationField(String name, String format, String title, String description,
-                         URI rdfType, Map constraints, Map options){
+                         URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
         super(name, FIELD_TYPE_DURATION, format, title, description, rdfType, constraints, options);
     }
 
     @Override
     public Duration parseValue(String value, String format, Map<String, Object> options)
-            throws InvalidCastException, ConstraintsException {
+            throws TypeInferringException {
         try{
             return Duration.parse(value);
         }catch(Exception e){
@@ -40,9 +40,22 @@ public class DurationField extends Field<Duration> {
         return value.toString();
     }
 
+    @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        return value.toString();
+    }
 
     @Override
     public String parseFormat(String value, Map<String, Object> options) {
         return "default";
+    }
+
+    @Override
+    Duration checkMinimumContraintViolated(Duration value) {
+        Duration minDuration = (Duration)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
+        if(value.compareTo(minDuration) < 0){
+            return minDuration;
+        }
+        return null;
     }
 }

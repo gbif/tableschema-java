@@ -1,10 +1,10 @@
 package io.frictionlessdata.tableschema.field;
 
-import io.frictionlessdata.tableschema.TestHelper;
-import io.frictionlessdata.tableschema.datasourceformat.DataSourceFormat;
-import io.frictionlessdata.tableschema.schema.Schema;
 import io.frictionlessdata.tableschema.Table;
+import io.frictionlessdata.tableschema.TestHelper;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import io.frictionlessdata.tableschema.exception.InvalidCastException;
+import io.frictionlessdata.tableschema.schema.Schema;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,7 +52,14 @@ class FieldOptionsTest {
         options.put("trueValues", trueValues);
         options.put("falseValues", falseValues);
 
-        Field testField = new BooleanField("name", Field.FIELD_FORMAT_DEFAULT, null, null, null, null, null);
+        Field<?> testField = new BooleanField(
+                "name",
+                Field.FIELD_FORMAT_DEFAULT,
+                null,
+                null,
+                null,
+                null,
+                null);
 
         testField.setOptions(options);
         Assertions.assertEquals(options, testField.getOptions());
@@ -65,7 +72,7 @@ class FieldOptionsTest {
                 "alternative_values.json");
         Schema schema = Schema.fromJson(source, true);
         File file = new File("data/employee_data.csv");
-        Table table = Table.fromSource(file, getTestDataDirectory(), schema, DataSourceFormat.getDefaultCsvFormat());
+        Table table = Table.fromSource(file, getTestDataDirectory(), schema, TableDataSource.getDefaultCsvFormat());
 
         Path tempDirPath = Files.createTempDirectory("datapackage-");
         table.writeCsv(new File(tempDirPath.toFile(), "table.csv"), null);
@@ -74,7 +81,7 @@ class FieldOptionsTest {
                 new File("table.csv"),
                 tempDirPath.toFile(),
                 schema,
-                DataSourceFormat.getDefaultCsvFormat());
+                TableDataSource.getDefaultCsvFormat());
 
         Assertions.assertEquals(table, table2);
     }
@@ -88,7 +95,7 @@ class FieldOptionsTest {
             schema = Schema.fromJson (fis, false);
         }
         File file = new File("data/employee_data_alternative_boolean.csv");
-        Table table = Table.fromSource(file, getTestDataDirectory(), schema, DataSourceFormat.getDefaultCsvFormat());
+        Table table = Table.fromSource(file, getTestDataDirectory(), schema, TableDataSource.getDefaultCsvFormat());
 
         assertThrows(InvalidCastException.class, () -> {
             table.read(true);

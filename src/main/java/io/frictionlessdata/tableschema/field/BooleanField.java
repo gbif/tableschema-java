@@ -3,9 +3,11 @@ package io.frictionlessdata.tableschema.field;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.frictionlessdata.tableschema.exception.ConstraintsException;
 import io.frictionlessdata.tableschema.exception.InvalidCastException;
+import io.frictionlessdata.tableschema.exception.TypeInferringException;
 
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class BooleanField extends Field<Boolean> {
     @JsonIgnore
@@ -27,7 +29,7 @@ public class BooleanField extends Field<Boolean> {
     }
 
     public BooleanField(String name, String format, String title, String description,
-                        URI rdfType, Map constraints, Map options){
+                        URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
         super(name, FIELD_TYPE_BOOLEAN, format, title, description, rdfType, constraints, options);
     }
 
@@ -41,7 +43,7 @@ public class BooleanField extends Field<Boolean> {
 
     @Override
     public Boolean parseValue(String value, String format, Map<String, Object> options)
-            throws InvalidCastException, ConstraintsException {
+            throws TypeInferringException {
         if (null != options) {
             if (options.containsKey("trueValues")) {
                 trueValues = new ArrayList<>((Collection) options.get("trueValues"));
@@ -58,7 +60,9 @@ public class BooleanField extends Field<Boolean> {
             return false;
 
         }else{
-            throw new InvalidCastException("Value "+value+" not in 'trueValues' or 'falseValues'");
+            String trueStr = (null == trueValues) ? "" : " ("+String.join(", ", trueValues)+") ";
+            String falseStr = (null == falseValues) ? "" : " ("+String.join(", ", falseValues)+") ";
+            throw new TypeInferringException("Value '"+value+"' not in 'trueValues' "+ trueStr +" or 'falseValues' "+ falseStr + "");
         }
     }
 
@@ -68,6 +72,7 @@ public class BooleanField extends Field<Boolean> {
             return null;
         return (value) ? _getActualTrueValues().get(0) : _getActualFalseValues().get(0);
     }
+
 
     @Override
     public String formatValueAsString(Boolean value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
@@ -84,9 +89,20 @@ public class BooleanField extends Field<Boolean> {
         return (value) ? trueValue : falseValue;
     }
 
+
+    @Override
+    String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        return value.toString();
+    }
+
     @Override
     public String parseFormat(String value, Map<String, Object> options) {
         return "default";
+    }
+
+    @Override
+    Boolean checkMinimumContraintViolated(Boolean value) {
+        return null;
     }
 
     public static Field fromJson (String json) {
@@ -100,6 +116,8 @@ public class BooleanField extends Field<Boolean> {
     public List<String> getFalseValues() {
         return falseValues;
     }
+
+
 
     @JsonIgnore
     private List<String> _getActualTrueValues() {
