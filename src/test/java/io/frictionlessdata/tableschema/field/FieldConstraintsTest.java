@@ -37,8 +37,6 @@ public class FieldConstraintsTest {
         violatedConstraints = field.checkConstraintViolations(valueNullConstraintNotEnforce);
         Assertions.assertTrue(violatedConstraints.containsKey(Field.CONSTRAINT_KEY_REQUIRED));
         Assertions.assertTrue((boolean)violatedConstraints.get(Field.CONSTRAINT_KEY_REQUIRED));
-
-        Assertions.assertNull(field.castValue(null));
     }
 
     @Test

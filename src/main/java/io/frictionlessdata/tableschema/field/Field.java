@@ -258,32 +258,28 @@ public abstract class Field<T> {
      * @throws InvalidCastException if the content of `value` cannot be cast to the destination type
      * @throws ConstraintsException thrown if `enforceConstraints` was set to `true`and constraints were violated
      */
-    public T castValue(String value, boolean enforceConstraints, Map<String, Object> options) throws InvalidCastException, ConstraintsException{
-        if(this.type.isEmpty()){
+    public T castValue(String value, boolean enforceConstraints, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
+        if (this.type.isEmpty()) {
             throw new InvalidCastException("Property 'type' must not be empty");
-        } else if (StringUtils.isEmpty(value)) {
-            return null;
         } else {
-            try{
-                T castValue = parseValue(value, format, options);
-            
+            try {
+                T castValue = StringUtils.isEmpty(value) ? null : parseValue(value, format, options);
+
                 // Check for constraint violations
-                if(enforceConstraints && this.constraints != null){
+                if (enforceConstraints && this.constraints != null) {
                     Map<String, Object> violatedConstraints = checkConstraintViolations(castValue);
-                    if(!violatedConstraints.isEmpty()){
-                        throw new ConstraintsException("Violated "+ violatedConstraints.size()+" contstraints");
+                    if (!violatedConstraints.isEmpty()) {
+                        throw new ConstraintsException("Field [" + this.name + "] value [" + value + "] violates constraint(s) " + violatedConstraints);
                     }
                 }
-                
+
                 return castValue;
-                
-            }catch(ConstraintsException ce){
+            } catch (ConstraintsException ce) {
                 throw ce;
-                
-            }catch(Exception e){
+            } catch (Exception e) {
                 throw new InvalidCastException(e);
             }
-        } 
+        }
     }
 
     /**
