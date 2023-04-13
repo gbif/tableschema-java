@@ -267,6 +267,14 @@ public abstract class Field<T> {
 
                 // Check for constraint violations
                 if (enforceConstraints && this.constraints != null) {
+                    boolean isRequired = this.constraints.containsKey(CONSTRAINT_KEY_REQUIRED)
+                            && ((boolean) this.constraints.get(CONSTRAINT_KEY_REQUIRED));
+
+                    // ignore null non-required values
+                    if (castValue == null && !isRequired) {
+                        return null;
+                    }
+
                     Map<String, Object> violatedConstraints = checkConstraintViolations(castValue);
                     if (!violatedConstraints.isEmpty()) {
                         throw new ConstraintsException("Field [" + this.name + "] value [" + value + "] violates constraint(s) " + violatedConstraints);
