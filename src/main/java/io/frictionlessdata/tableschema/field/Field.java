@@ -299,7 +299,7 @@ public abstract class Field<T> {
      * @throws ConstraintsException thrown if `enforceConstraints` was set to `true`and constraints were violated
      */
     public T castValue(String value) throws InvalidCastException, ConstraintsException{
-        return castValue(value, false, options);
+        return castValue(value, true, options);
     }
 
     abstract T checkMinimumContraintViolated(T value);
