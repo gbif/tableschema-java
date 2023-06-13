@@ -7,7 +7,13 @@ import io.frictionlessdata.tableschema.inputstream.ByteOrderMarkStrippingInputSt
 import io.frictionlessdata.tableschema.util.JsonUtil;
 import org.apache.commons.csv.CSVFormat;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -89,6 +95,15 @@ public interface TableDataSource {
             return fromSource(content);
         } catch (IOException ex) {
             throw new TableIOException(ex);
+        }
+    }
+
+    static TableDataSource fromSourceExperimental(File input, File workDir) {
+        try {
+            Path resolvedPath = TableDataSource.toSecure(input.toPath(), workDir.toPath());
+            return new CsvFileTableDataSource(resolvedPath.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

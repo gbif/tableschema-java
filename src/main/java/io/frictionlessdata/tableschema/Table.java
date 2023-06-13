@@ -140,7 +140,7 @@ public class Table{
      */
     public static Table fromSource(File dataSource, File basePath) {
         Table table = new Table();
-        table.dataSource = TableDataSource.fromSource(dataSource, basePath);
+        table.dataSource = TableDataSource.fromSourceExperimental(dataSource, basePath);
         return table;
     }
 
