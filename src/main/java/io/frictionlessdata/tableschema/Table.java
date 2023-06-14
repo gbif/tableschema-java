@@ -132,6 +132,15 @@ public class Table{
         return table;
     }
 
+    public static Table fromSource(File dataSource, File basePath, Schema schema, CSVFormat format, boolean streaming) {
+        Table table = fromSource(dataSource, basePath, streaming);
+        table.schema = schema;
+        if (null != format) {
+            table.setCsvFormat(format);
+        }
+        return table;
+    }
+
     /**
      * Create Table from a {@link java.io.File} containing the CSV/JSON
      * data and without either a Schema or a CSVFormat.
@@ -140,7 +149,13 @@ public class Table{
      */
     public static Table fromSource(File dataSource, File basePath) {
         Table table = new Table();
-        table.dataSource = TableDataSource.fromSourceExperimental(dataSource, basePath);
+        table.dataSource = TableDataSource.fromSource(dataSource, basePath);
+        return table;
+    }
+
+    public static Table fromSource(File dataSource, File basePath, boolean streaming) {
+        Table table = new Table();
+        table.dataSource = TableDataSource.fromSource(dataSource, basePath, streaming);
         return table;
     }
 

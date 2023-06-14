@@ -98,10 +98,15 @@ public interface TableDataSource {
         }
     }
 
-    static TableDataSource fromSourceExperimental(File input, File workDir) {
+    static TableDataSource fromSource(File input, File workDir, boolean streaming) {
         try {
-            Path resolvedPath = TableDataSource.toSecure(input.toPath(), workDir.toPath());
-            return new CsvFileTableDataSource(resolvedPath.toString());
+            if (streaming) {
+                Path resolvedPath = TableDataSource.toSecure(input.toPath(), workDir.toPath());
+                return new CsvFileTableDataSource(resolvedPath.toString());
+            } else {
+                String content = getFileContents(input.getPath(), workDir);
+                return fromSource(content);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

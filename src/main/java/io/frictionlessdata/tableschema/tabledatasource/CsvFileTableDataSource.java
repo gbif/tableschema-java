@@ -34,7 +34,6 @@ public class CsvFileTableDataSource extends AbstractTableDataSource<String> {
                 : TableDataSource.getDefaultCsvFormat();
     }
 
-
     @Override
     public Iterator<String[]> iterator() {
         CSVParser parser;
