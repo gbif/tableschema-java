@@ -98,11 +98,15 @@ public interface TableDataSource {
         }
     }
 
-    static TableDataSource fromSource(File input, File workDir, boolean streaming) {
+    static TableDataSource fromSource(File input, File workDir, CSVFormat format, boolean streaming) {
         try {
             if (streaming) {
                 Path resolvedPath = TableDataSource.toSecure(input.toPath(), workDir.toPath());
-                return new CsvFileTableDataSource(resolvedPath.toString());
+                CsvFileTableDataSource csvFileTableDataSource = new CsvFileTableDataSource(resolvedPath.toString());
+                if (format != null) {
+                    csvFileTableDataSource.setFormat(format);
+                }
+                return csvFileTableDataSource;
             } else {
                 String content = getFileContents(input.getPath(), workDir);
                 return fromSource(content);

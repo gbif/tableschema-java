@@ -133,7 +133,7 @@ public class Table{
     }
 
     public static Table fromSource(File dataSource, File basePath, Schema schema, CSVFormat format, boolean streaming) {
-        Table table = fromSource(dataSource, basePath, streaming);
+        Table table = fromSource(dataSource, basePath, format, streaming);
         table.schema = schema;
         if (null != format) {
             table.setCsvFormat(format);
@@ -153,9 +153,9 @@ public class Table{
         return table;
     }
 
-    public static Table fromSource(File dataSource, File basePath, boolean streaming) {
+    public static Table fromSource(File dataSource, File basePath, CSVFormat format, boolean streaming) {
         Table table = new Table();
-        table.dataSource = TableDataSource.fromSource(dataSource, basePath, streaming);
+        table.dataSource = TableDataSource.fromSource(dataSource, basePath, format, streaming);
         return table;
     }
 
