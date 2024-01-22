@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.frictionlessdata</groupId>
     <artifactId>tableschema-java</artifactId>
-    <version>0.6.16-gbif</version>
+    <version>0.6.17-gbif-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <issueManagement>
@@ -15,7 +15,7 @@
         <url>https://github.com/gbif/tableschema-java</url>
         <connection>scm:git:git://github.com/gbif/tableschema-java.git</connection>
         <developerConnection>scm:git:git@github.com:gbif/tableschema-java.git</developerConnection>
-      <tag>tableschema-java-0.6.16-gbif</tag>
+      <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
