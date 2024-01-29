@@ -268,7 +268,7 @@ public abstract class Field<T> {
                 // Check for constraint violations
                 if (enforceConstraints && this.constraints != null) {
                     boolean isRequired = this.constraints.containsKey(CONSTRAINT_KEY_REQUIRED)
-                            && ((boolean) this.constraints.get(CONSTRAINT_KEY_REQUIRED));
+                        && ((boolean) this.constraints.get(CONSTRAINT_KEY_REQUIRED));
 
                     // ignore null non-required values
                     if (castValue == null && !isRequired) {
@@ -284,6 +284,8 @@ public abstract class Field<T> {
                 return castValue;
             } catch (ConstraintsException ce) {
                 throw ce;
+            } catch (TypeInferringException e) {
+                throw new InvalidCastException("Field [" + this.name + "] provided value [" + value + "] is not of [" + type + "] type.");
             } catch (Exception e) {
                 throw new InvalidCastException(e);
             }
