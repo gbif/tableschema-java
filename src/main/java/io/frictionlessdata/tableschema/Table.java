@@ -567,17 +567,18 @@ public class Table{
         }
         List<String> declaredHeaders = schema.getFieldNames();
         List<String> foundHeaders = Arrays.asList(headers);
-        //If we have JSON data, fields with `null` values might be omitted, therefore do not do a strict check
-        if (dataSource.hasReliableHeaders()) {
-            for (String col : declaredHeaders) {
-                if (!foundHeaders.contains(col)) {
-                    throw new TableValidationException("Declared column " + col + " not found in data");
-                }
-            }
-        }
+        // If we have JSON data, fields with `null` values might be omitted, therefore do not do a strict check
+        // NOTE: Remove the check - otherwise it checks whether all the headers are present
+//        if (dataSource.hasReliableHeaders()) {
+//            for (String col : foundHeaders) {
+//                if (!declaredHeaders.contains(col)) {
+//                    throw new TableValidationException("Declared column " + col + " not found in data");
+//                }
+//            }
+//        }
         for (String col : headers) {
             if (!declaredHeaders.contains(col)) {
-                throw new TableValidationException("Found undeclared column: "+col);
+                throw new TableValidationException("Found undeclared column: " + col);
             }
         }
         if (null != schema)
