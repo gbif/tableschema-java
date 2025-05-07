@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.stream.Collectors;
 
 import static io.frictionlessdata.tableschema.TestHelper.getTestDataDirectory;
@@ -24,7 +23,7 @@ public class TableBOMTests {
             .builder()
             .setRecordSeparator("\n")
             .setHeader(new String[0])
-            .build();
+            .get();
 
 
     @Test

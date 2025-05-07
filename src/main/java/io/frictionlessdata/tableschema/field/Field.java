@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 @JsonInclude(value = Include.NON_EMPTY)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, defaultImpl = AnyField.class,
         include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
+@JsonPropertyOrder({"name", "title", "type", "format", "example", "description", "rdfType", "constraints"})
 @JsonSubTypes({
         @JsonSubTypes.Type(value = StringField.class, name = Field.FIELD_TYPE_STRING),
         @JsonSubTypes.Type(value = IntegerField.class, name = Field.FIELD_TYPE_INTEGER),
@@ -126,6 +127,12 @@ public abstract class Field<T> {
     private String description = null;
 
     /**
+     * An example value for the field"
+     */
+    private String example = null;
+
+
+    /**
      * A field's `type` property is a string indicating the type of this field.
      * http://frictionlessdata.io/specs/table-schema/index.html#field-descriptors
      */
@@ -149,6 +156,7 @@ public abstract class Field<T> {
 
     Map<String, Object> constraints = null;
 
+    @JsonIgnore
     Map<String, Object> options = new HashMap<>();
 
     @JsonAnyGetter
@@ -179,7 +187,8 @@ public abstract class Field<T> {
             String description,
             URI rdfType,
             Map<String, Object> constraints,
-            Map<String, Object> options){
+            Map<String, Object> options,
+            String example){
         this.name = name;
         this.type = type;
         this.format = format;
@@ -188,6 +197,7 @@ public abstract class Field<T> {
         this.description = description;
         this.constraints = constraints;
         this.options = options;
+        this.example = example;
     }
 
     public static Field<?> fromJson (String json) {
@@ -247,7 +257,7 @@ public abstract class Field<T> {
      */
     public abstract String parseFormat(String value, Map<String, Object> options);
 
-    
+
     /**
      * Use the Field definition to cast (=parse) a value into the Field type. Constraints enforcing
      * can be switched on or off.
@@ -304,7 +314,7 @@ public abstract class Field<T> {
         return castValue(value, true, options);
     }
 
-    abstract T checkMinimumContraintViolated(T value);
+    abstract T checkMinimumConstraintViolated(T value);
 
     /**
      * Returns a Map with all the constraints that have been violated.
@@ -323,8 +333,7 @@ public abstract class Field<T> {
         }
 
         // All values for that field MUST be unique within the data file in which it is found.
-        // Can't check UNIQUE constraint when operating with only one value.
-        // TODO: Implement a method that takes List<Object> value as argument.
+        // TODO: Implement
         /*
         if(this.constraints.containsKey(CONSTRAINT_KEY_UNIQUE)){
     
@@ -373,7 +382,7 @@ public abstract class Field<T> {
          * If a minimum value constraint is specified then the field descriptor MUST contain a type key.
          **/
         if(this.constraints.containsKey(CONSTRAINT_KEY_MINIMUM)){
-            T violatedContraint = checkMinimumContraintViolated((T)value);
+            T violatedContraint = checkMinimumConstraintViolated((T)value);
             if (null != violatedContraint) {
                 violatedConstraints.put(CONSTRAINT_KEY_MINIMUM, violatedContraint);
             }
@@ -563,10 +572,19 @@ public abstract class Field<T> {
      * @return String-serialized JSON Object containing the properties of this field
      */
     @JsonIgnore
+    @Deprecated
     public String getJson(){
-        return JsonUtil.getInstance().serialize(this);
+        return asJson();
     }
 
+    /**
+     * Get the JSON representation of the Field.
+     * @return String-serialized JSON Object containing the properties of this field
+     */
+    @JsonIgnore
+    public String asJson(){
+        return JsonUtil.getInstance().serialize(this);
+    }
 
     @JsonIgnore
     public String getCastMethodName() {
@@ -623,6 +641,14 @@ public abstract class Field<T> {
         this.rdfType = rdfType;
     }
 
+    public String getExample() {
+        return example;
+    }
+
+    public void setExample(String example) {
+        this.example = example;
+    }
+
     public Map<String, Object> getOptions() {
         return options;
     }
@@ -653,6 +679,47 @@ public abstract class Field<T> {
         }
         return Objects.equals(constraints, other.constraints);
     }
+
+    /**
+     * Use the Field definition to cast (=parse) a value into the Field type. Constraints enforcing
+     * can be switched on or off.
+     * @param value the value string to cast
+     * @param enforceConstraints whether to enforce Field constraints
+     * @param options casting options
+     * @return result of the cast operation
+     * @throws InvalidCastException if the content of `value` cannot be cast to the destination type
+     * @throws ConstraintsException thrown if `enforceConstraints` was set to `true`and constraints were violated
+     */
+    T castValue(String value, boolean enforceConstraints, Map<String, Object> options) throws InvalidCastException, ConstraintsException{
+        if(this.type.isEmpty()){
+            throw new InvalidCastException("Property 'type' must not be empty");
+        } else if (StringUtils.isEmpty(value)) {
+            return null;
+        } else {
+            try{
+                T castValue = parseValue(value, format, options);
+
+                // Check for constraint violations
+                if(enforceConstraints && this.constraints != null){
+                    Map<String, Object> violatedConstraints = checkConstraintViolations(castValue);
+                    if(!violatedConstraints.isEmpty()){
+                        String violatedConstraintNames = String.join(", ", violatedConstraints.keySet());
+                        throw new ConstraintsException("Field '" + this.name + "' value '" + value + "' violates constraint(s) [" + violatedConstraintNames+"]");
+                    }
+                }
+
+                return castValue;
+
+            } catch(ConstraintsException ce){
+                throw ce;
+            } catch (TypeInferringException e) {
+                throw new InvalidCastException("Field '" + this.name + "' provided value '" + value + "' is not of '" + type + "' type.");
+            } catch(Exception e){
+                throw new InvalidCastException(e);
+            }
+        }
+    }
+
 
     private boolean isWellKnownType(String typeName) {
         return wellKnownFieldTypes.contains(typeName);

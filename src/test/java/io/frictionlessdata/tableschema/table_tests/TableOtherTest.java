@@ -3,11 +3,13 @@ package io.frictionlessdata.tableschema.table_tests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.frictionlessdata.tableschema.Table;
-import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
+import io.frictionlessdata.tableschema.TestHelper;
 import io.frictionlessdata.tableschema.exception.TableSchemaException;
 import io.frictionlessdata.tableschema.exception.TableValidationException;
 import io.frictionlessdata.tableschema.field.*;
 import io.frictionlessdata.tableschema.schema.Schema;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
+import io.frictionlessdata.tableschema.util.JsonUtil;
 import org.apache.commons.csv.CSVFormat;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +17,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,6 +81,7 @@ public class TableOtherTest {
 
 
     @Test
+    @DisplayName("Read JSON object array data from string with Schema and compare to Table read from CSV")
     public void testReadFromValidJSONArrayWithSchema() throws Exception{
         File schemaFile = new File(getTestDataDirectory(), "schema/population_schema.json");
         Schema schema = Schema.fromJson (schemaFile, true);
@@ -90,6 +92,36 @@ public class TableOtherTest {
         Table expectedTable = Table.fromSource(new File("data/population.csv")
             , getTestDataDirectory(), expectedSchema, TableDataSource.getDefaultCsvFormat());
         Assertions.assertEquals(expectedTable, table);
+    }
+
+    @Test
+    @DisplayName("Read JSON object array data from string with Schema, return data as CSV and compare to CSV")
+    public void testReadFromValidJSONArrayWithSchemaReturnCSV() throws Exception{
+        File schemaFile = new File(getTestDataDirectory(), "schema/population_schema.json");
+        Schema schema = Schema.fromJson (schemaFile, true);
+        Table table = Table.fromSource(populationTestJson, schema, TableDataSource.getDefaultCsvFormat());
+
+        String csv = table.asCsv();
+        String refString = TestHelper.getResourceFileContent("/fixtures/data/population.csv");
+        Assertions.assertEquals(
+                refString.replaceAll("[\r\n]+", "\n"),
+                csv.replaceAll("[\r\n]+", "\n"));
+    }
+
+    @Test
+    @DisplayName("Read CSV data from string with Schema, return data as JSON object array and compare to file")
+    public void testReadFromCSVWithSchemaReturnValidJSONArray() throws Exception{
+        File schemaFile = new File(getTestDataDirectory(), "schema/population_schema.json");
+        Schema schema = Schema.fromJson (schemaFile, true);
+        File inFile = new File("data/population.csv");
+        File baseDir = getTestDataDirectory();
+        Table table = Table.fromSource(inFile, baseDir, schema, TableDataSource.getDefaultCsvFormat());
+
+        String json = table.asJson();
+        JsonNode testNode = JsonUtil.getInstance().readValue(json);
+        String refString = TestHelper.getResourceFileContent("/fixtures/data/population.json");
+        JsonNode refNode = JsonUtil.getInstance().readValue(refString);
+        Assertions.assertEquals(refNode, testNode);
     }
 
 
@@ -230,7 +262,7 @@ public class TableOtherTest {
         File file = new File("data/employee_data.csv");
         Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, TableDataSource.getDefaultCsvFormat());
 
-        Iterator<Map<String, Object>> iter = employeeTable.mappingIterator(false, false, false);
+        Iterator<Map<String, Object>> iter = employeeTable.mappingIterator(false, true, false);
 
         while(iter.hasNext()){
             Map row = iter.next();
@@ -373,7 +405,7 @@ public class TableOtherTest {
         schema.addField(isAdminField);
 
         Field<?> addressCoordinatesField
-            = new GeopointField("addressCoordinates", Field.FIELD_FORMAT_OBJECT, null, null, null, null, null);
+            = new GeopointField("addressCoordinates", Field.FIELD_FORMAT_OBJECT, null, null, null, null, null, null);
         schema.addField(addressCoordinatesField);
 
         Field<?> contractLengthField = new DurationField("contractLength");

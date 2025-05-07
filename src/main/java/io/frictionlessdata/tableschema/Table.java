@@ -1,16 +1,19 @@
 package io.frictionlessdata.tableschema;
 
-import io.frictionlessdata.tableschema.schema.BeanSchema;
-import io.frictionlessdata.tableschema.tabledatasource.BeanTableDataSource;
-import io.frictionlessdata.tableschema.tabledatasource.CsvTableDataSource;
-import io.frictionlessdata.tableschema.tabledatasource.StringArrayTableDataSource;
-import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.frictionlessdata.tableschema.exception.*;
 import io.frictionlessdata.tableschema.field.Field;
 import io.frictionlessdata.tableschema.iterator.BeanIterator;
 import io.frictionlessdata.tableschema.iterator.SimpleTableIterator;
 import io.frictionlessdata.tableschema.iterator.TableIterator;
+import io.frictionlessdata.tableschema.schema.BeanSchema;
 import io.frictionlessdata.tableschema.schema.Schema;
+import io.frictionlessdata.tableschema.tabledatasource.BeanTableDataSource;
+import io.frictionlessdata.tableschema.tabledatasource.CsvTableDataSource;
+import io.frictionlessdata.tableschema.tabledatasource.StringArrayTableDataSource;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import io.frictionlessdata.tableschema.util.JsonUtil;
 import io.frictionlessdata.tableschema.util.TableSchemaUtil;
 import org.apache.commons.csv.CSVFormat;
@@ -18,6 +21,8 @@ import org.apache.commons.csv.CSVPrinter;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -52,6 +57,9 @@ public class Table{
     private Schema schema = null;
     private CSVFormat format = TableDataSource.getDefaultCsvFormat();
 
+    @JsonIgnore
+    private Charset charset = StandardCharsets.UTF_8;
+
     /**
      * Constructor for an empty Table. It contains neither data nor is it controlled by a Schema
      */
@@ -83,6 +91,11 @@ public class Table{
             validate();
     }
 
+    /**
+     * Constructor for a Table from a {@link BeanTableDataSource} instance holding a collection
+     * of instances of a certain Bean class. The Schema is inferred from the Bean class.
+     * @param dataSource the input data
+     */
     public static Table fromSource(BeanTableDataSource dataSource) {
         Table table = new Table();
         table.dataSource = dataSource;
@@ -161,25 +174,25 @@ public class Table{
 
     /**
      * Create Table using either a CSV or JSON array-containing string and without either a Schema or a CSVFormat.
-     * @param dataSource the CSV or JSON content for the Table
+     * @param data the CSV or JSON content for the Table
      */
-    public static Table fromSource(String dataSource) {
+    public static Table fromSource(String data) {
         Table table = new Table();
-        table.dataSource = TableDataSource.fromSource(dataSource);
+        table.dataSource = TableDataSource.fromSource(data);
         return table;
     }
 
     /**
      * Create Table using either a CSV or JSON array-containing string and with  a Schema and a CSVFormat.
-     * @param dataSource the CSV or JSON content for the Table
+     * @param data the CSV or JSON content for the Table
      * @param schema table schema. Can be `null`
      * @param format The expected CSVFormat if dataSource is a CSV-containing InputStream; ignored for JSON data.
      *               Can be `null`
      */
-    public static Table fromSource(String dataSource, Schema schema, CSVFormat format) {
+    public static Table fromSource(String data, Schema schema, CSVFormat format) {
         Table table = new Table();
         table.schema = schema;
-        table.dataSource = TableDataSource.fromSource(dataSource);
+        table.dataSource = TableDataSource.fromSource(data);
         if (null != format) {
             table.setCsvFormat(format);
         }
@@ -335,13 +348,29 @@ public class Table{
         return new TableIterator<>(this, true, extended, cast, relations);
     }
 
+    /**
+     * returns the charset or encoding to use when writing CSV files.
+     * @return the used charset
+     */
+    public Charset getCharset() {
+        return charset;
+    }
+
+    /**
+     * Sets the charset or encoding to use when writing CSV files.
+     * @param charset the charset to use
+     */
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
+
     public Map<Integer, Integer> getSchemaHeaderMapping() {
         if (null == schema) {
             return TableSchemaUtil
-                    .createSchemaHeaderMapping(dataSource.getHeaders(), dataSource.getHeaders());
+                    .createSchemaHeaderMapping(dataSource.getHeaders(), dataSource.getHeaders(), true);
         } else {
             return TableSchemaUtil
-                    .createSchemaHeaderMapping(dataSource.getHeaders(), schema.getHeaders());
+                    .createSchemaHeaderMapping(dataSource.getHeaders(), schema.getHeaders(), dataSource.hasReliableHeaders());
         }
     }
 
@@ -381,7 +410,7 @@ public class Table{
         if(cast && (null == schema)){
             throw new TableSchemaException("Cannot cast without a schema");
         }
-        if(cast && !this.schema.hasFields()){
+        if(cast && this.schema.isEmpty()){
             throw new InvalidCastException("Schema has no fields");
         }
         
@@ -421,7 +450,7 @@ public class Table{
     /**
      * Read all data from the Table and return it as JSON. If no Schema is set on the table, one will be inferred.
      * This can be used for smaller data tables but for huge or unknown sizes, there will be performance considerations,
-     * as this method loads all data into RAM *and* does a costly schema inferral.
+     * as this method loads all data into RAM *and* does a costly schema inferal.
      *
      * It ignores relations to other data sources.
      *
@@ -444,38 +473,74 @@ public class Table{
             rows.add(obj);
         });
 
-        return JsonUtil.getInstance().serialize(rows);
+        String retVal = null;
+        ObjectMapper mapper = JsonUtil.getInstance().getMapper();
+        try {
+            retVal = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rows);
+        } catch (JsonProcessingException ex) {
+            throw new JsonSerializingException(ex);
+        }
+        return retVal;
     }
 
     /**
-     * Write as CSV file, the `format` parameter decides on the CSV options. If it is
-     * null, then the file will be written as RFC 4180 compliant CSV
-     * @param out the Writer to write to
-     * @param format the CSV format to use
-     * @param sortedHeaders the header row names in the order in which data should be
-     *                      exported
+     * Read all data from the Table and return it as a RFC 4180 compliant CSV string.
+     * Column order will be deducted from the table data source.
+     *
+     * @return A CSV representation of the data as a String.
      */
-    private void writeCsv(Writer out, CSVFormat format, String[] sortedHeaders) {
+    public String asCsv() {
+        return asCsv(null, null);
+    }
+
+    /**
+     * Return the data as a CSV string,
+     *
+     * - the `format` parameter decides on the CSV options. If it is null, then the file will
+     *    be written as RFC 4180 compliant CSV
+     * - the `headerNames` parameter decides on the order of the headers in the CSV file. If it is null,
+     *    the order of the columns will be the same as in the data source.
+     *
+     * It ignores relations to other data sources.
+     *
+     * @param format the CSV format to use
+     * @param headerNames the header row names in the order in which data should be exported
+     *
+     * @return A CSV representation of the data as a String.
+     */
+    public String asCsv(CSVFormat format, String[] headerNames) {
+        StringBuilder out = new StringBuilder();
         try {
-            if (null == sortedHeaders) {
-                writeCsv(out, format, getHeaders());
-                return;
+            if (null == headerNames) {
+                return asCsv(format, getHeaders());
             }
             CSVFormat locFormat = (null != format)
                     ? format
                     : TableDataSource.getDefaultCsvFormat();
 
-            locFormat = locFormat.builder().setHeader(sortedHeaders).build();
+            locFormat = locFormat.builder().setHeader(headerNames).get();
             CSVPrinter csvPrinter = new CSVPrinter(out, locFormat);
 
             String[] headers = getHeaders();
             Map<Integer, Integer> mapping
-                    = TableSchemaUtil.createSchemaHeaderMapping(headers, sortedHeaders);
-            writeCSVData( mapping, csvPrinter);
+                    = TableSchemaUtil.createSchemaHeaderMapping(headers, headerNames, dataSource.hasReliableHeaders());
+            if ((null != schema)) {
+                writeCSVData(mapping, schema, csvPrinter);
+            } else {
+                writeCSVData(mapping, csvPrinter);
+            }
             csvPrinter.close();
         } catch (IOException ex) {
             throw new TableIOException(ex);
         }
+        String result = out.toString();
+        if (result.endsWith("\n")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        if (result.endsWith("\r")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 
     /**
@@ -490,7 +555,7 @@ public class Table{
                 try {
                     String[] headers;
                     if (null != schema) {
-                        List<String> fieldNames = schema.getFieldNames();
+                        List<String> fieldNames = schema.getFields().stream().map(Field::getName).toList();
                         headers = fieldNames.toArray(new String[0]);
                     } else {
                         headers = dataSource.getHeaders();
@@ -534,7 +599,7 @@ public class Table{
      * @param format the CSV format to use
      */
     public void writeCsv(File outputFile, CSVFormat format){
-        try (FileWriter fw = new FileWriter(outputFile)) {
+        try (FileWriter fw = new FileWriter(outputFile, charset)) {
             writeCsv(fw, format);
         } catch (IOException ex) {
             throw new TableIOException(ex);
@@ -565,7 +630,7 @@ public class Table{
         if (null == headers) {
             return;
         }
-        List<String> declaredHeaders = schema.getFieldNames();
+        List<String> declaredHeaders = schema.getFields().stream().map(Field::getName).toList();
         List<String> foundHeaders = Arrays.asList(headers);
         // If we have JSON data, fields with `null` values might be omitted, therefore do not do a strict check
         // NOTE: Remove the check - otherwise it checks whether all the headers are present
@@ -582,7 +647,7 @@ public class Table{
             }
         }
         if (null != schema)
-            schema.validate();
+            schema.validate(this);
     }
 
     /**
@@ -627,8 +692,7 @@ public class Table{
     public Schema inferSchema(String[] headers, int rowLimit) throws TypeInferringException{
         try{
             List<Object[]> data = read();
-            schema = Schema.infer(data, headers, rowLimit);
-            return schema;
+            return Schema.infer(data, headers, rowLimit);
 
         } catch(Exception e){
             throw new TypeInferringException(e);
@@ -723,10 +787,52 @@ public class Table{
     }
 
 
-    private void writeCSVData(Map<Integer, Integer> mapping, CSVPrinter csvPrinter) {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        Schema schema = (null != this.schema) ? this.schema : this.inferSchema();
 
+    /**
+     * Write as CSV file, the `format` parameter decides on the CSV options. If it is
+     * null, then the file will be written as RFC 4180 compliant CSV
+     * @param out the Writer to write to
+     * @param format the CSV format to use
+     * @param sortedHeaders the header row names in the order in which data should be
+     *                      exported
+     */
+    private void writeCsv(Writer out, CSVFormat format, String[] sortedHeaders) {
+        try {
+            if (null == sortedHeaders) {
+                writeCsv(out, format, getHeaders());
+                return;
+            }
+            CSVFormat locFormat = (null != format)
+                    ? format
+                    : TableDataSource.getDefaultCsvFormat();
+
+            locFormat = locFormat.builder().setHeader(sortedHeaders).get();
+            CSVPrinter csvPrinter = new CSVPrinter(out, locFormat);
+
+            String[] headers = getHeaders();
+            Map<Integer, Integer> mapping
+                    = TableSchemaUtil.createSchemaHeaderMapping(headers, sortedHeaders, dataSource.hasReliableHeaders());
+            if ((null != schema)) {
+                writeCSVData(mapping, schema, csvPrinter);
+            } else {
+                writeCSVData(mapping, csvPrinter);
+            }
+            csvPrinter.close();
+        } catch (IOException ex) {
+            throw new TableIOException(ex);
+        }
+    }
+
+
+    /**
+     * Append the data to a {@link org.apache.commons.csv.CSVPrinter}. Each cell is formatted via the corresponding
+     * {@link Field}, which takes into account possible Field options. Column sorting is according to the mapping.
+     *
+     * @param mapping the mapping of the column numbers in the CSV file to the column numbers in the data source
+     * @param schema the Schema to use for formatting the data
+     * @param csvPrinter the CSVPrinter to write to
+     */
+    private void writeCSVData(Map<Integer, Integer> mapping, Schema schema, CSVPrinter csvPrinter) {
         Iterator<Object> iter = this.iterator(false, false, true, false);
         iter.forEachRemaining((rec) -> {
             Object[] row = (Object[])rec;
@@ -741,6 +847,36 @@ public class Table{
                 obj.add(field.formatValueAsString(s));
                 i++;
             }
+
+            try {
+                csvPrinter.printRecord(obj);
+            } catch (Exception ex) {
+                throw new TableIOException(ex);
+            }
+        });
+    }
+
+    /**
+     * Append the data to a {@link org.apache.commons.csv.CSVPrinter}. In absence of a Schema, each cell is formatted
+     * via a simple call to `toString()`. Column sorting is according to the mapping.
+     *
+     * @param mapping the mapping of the column numbers in the CSV file to the column numbers in the data source
+     * @param csvPrinter the CSVPrinter to write to
+     */
+    private void writeCSVData(Map<Integer, Integer> mapping, CSVPrinter csvPrinter) {
+        Iterator<Object> iter = this.iterator(false, false, false, false);
+        iter.forEachRemaining((rec) -> {
+            Object[] row = (Object[])rec;
+            Object[] sortedRec = new Object[row.length];
+            for (int i = 0; i < row.length; i++) {
+                sortedRec[mapping.get(i)] = row[i];
+            }
+            List<String> obj = new ArrayList<>();
+
+            for (Object s : sortedRec) {
+                obj.add((null != s) ? s.toString() : "");
+            }
+
             try {
                 csvPrinter.printRecord(obj);
             } catch (Exception ex) {

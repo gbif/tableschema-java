@@ -1,14 +1,12 @@
 # tableschema-java
 
-[![Build Status](https://travis-ci.org/frictionlessdata/tableschema-java.svg?branch=master)](https://travis-ci.org/frictionlessdata/tableschema-java)
-[![Coverage Status](https://coveralls.io/repos/github/frictionlessdata/tableschema-java/badge.svg?branch=master)](https://coveralls.io/github/frictionlessdata/tableschema-java?branch=master)
 [![License](https://img.shields.io/github/license/frictionlessdata/tableschema-java.svg)](https://github.com/frictionlessdata/tableschema-java/blob/master/LICENSE)
 [![Release](https://img.shields.io/jitpack/v/github/frictionlessdata/tableschema-java)](https://jitpack.io/#frictionlessdata/tableschema-java)
 [![Codebase](https://img.shields.io/badge/codebase-github-brightgreen)](https://github.com/frictionlessdata/tableschema-java)
 [![Support](https://img.shields.io/badge/support-discord-brightgreen)](https://discordapp.com/invite/Sewv6av)
 
 A Java library for working with Table data. 
-**tableschema-java** is a library aimed at parsing CSV and JSON-Array documents into a live Java objects according 
+**tableschema-java** is a library aimed at parsing CSV and JSON-Array documents into live Java objects according 
 to [Table Schema](https://frictionlessdata.io/specs/table-schema/), a format definition based on 
 [JSON Schema](https://json-schema.org/understanding-json-schema/).
 
@@ -45,6 +43,7 @@ so show me the goods.
 
 Found a problem and would like to fix it? Have that great idea and would love to see it in the repository?
 
+> [!NOTE]
 > Please open an issue before you start working.
 
 It  saves a lot of time for everyone, and we are super happy to answer questions and help you along the way. 
@@ -55,10 +54,10 @@ This project follows the [Open Knowledge International coding standards](https:/
 
 Get started:
 ```sh
-# install Java 1.8 or higher (use Jabba if you need to test on different versions) and maven2
+# install Java 17 or higher (use Jabba if you need to test on different versions) and maven2
 $ cd tableschema-java
-$ jabba install 1.8
-$ jabba use 1.8
+$ jabba install 17
+$ jabba use 17
 $ mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 $ mvn test -B
 ```

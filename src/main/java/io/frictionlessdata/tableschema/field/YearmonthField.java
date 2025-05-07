@@ -25,8 +25,8 @@ public class YearmonthField extends Field<YearMonth> {
     }
 
     public YearmonthField(String name, String format, String title, String description,
-                          URI rdfType, Map<String, Object> constraints, Map<String, Object> options) {
-        super(name, FIELD_TYPE_YEARMONTH, format, title, description, rdfType, constraints, options);
+                          URI rdfType, Map<String, Object> constraints, Map<String, Object> options, String example) {
+        super(name, FIELD_TYPE_YEARMONTH, format, title, description, rdfType, constraints, options, example);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class YearmonthField extends Field<YearMonth> {
     }
 
     @Override
-    YearMonth checkMinimumContraintViolated(YearMonth value) {
+    YearMonth checkMinimumConstraintViolated(YearMonth value) {
         YearMonth minDate = (YearMonth)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
         if(value.isBefore(minDate)){
             return minDate;

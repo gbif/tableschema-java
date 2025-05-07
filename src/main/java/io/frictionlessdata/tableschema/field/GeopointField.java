@@ -23,8 +23,8 @@ public class GeopointField extends Field<double[]> {
     }
 
     public GeopointField(String name, String format, String title, String description,
-                         URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
-        super(name, FIELD_TYPE_GEOPOINT, format, title, description, rdfType, constraints, options);
+                         URI rdfType, Map<String, Object> constraints, Map<String, Object> options, String example){
+        super(name, FIELD_TYPE_GEOPOINT, format, title, description, rdfType, constraints, options, example);
     }
 
     @Override
@@ -143,7 +143,7 @@ public class GeopointField extends Field<double[]> {
     }
 
     @Override
-    double[] checkMinimumContraintViolated(double[] value) {
+    double[] checkMinimumConstraintViolated(double[] value) {
         return null;
     }
 

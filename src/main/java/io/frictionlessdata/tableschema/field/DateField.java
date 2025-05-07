@@ -7,7 +7,6 @@ import io.frictionlessdata.tableschema.exception.TypeInferringException;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -26,8 +25,8 @@ public class DateField extends Field<LocalDate> {
     }
 
     public DateField(String name, String format, String title, String description,
-                     URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
-        super(name, FIELD_TYPE_DATE, format, title, description, rdfType, constraints, options);
+                     URI rdfType, Map<String, Object> constraints, Map<String, Object> options, String example){
+        super(name, FIELD_TYPE_DATE, format, title, description, rdfType, constraints, options, example);
     }
 
     @Override
@@ -94,7 +93,7 @@ public class DateField extends Field<LocalDate> {
     }
 
     @Override
-    LocalDate checkMinimumContraintViolated(LocalDate value) {
+    LocalDate checkMinimumConstraintViolated(LocalDate value) {
         LocalDate minDate = (LocalDate)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
         if(value.isBefore(minDate)){
             return minDate;

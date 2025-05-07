@@ -10,18 +10,54 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- *
+ * Iterator that can read data from a Table in the various permutations
+ * of the `keyed`, `extended`, `cast`, `relations` flags.
  *
  */
 public class TableIterator<T> implements Iterator<T> {
+    /**
+     * The table's headers
+     */
     String[] headers = null;
+
+    /**
+     * The table's Schema
+     */
     Schema schema = null;
+
+    /**
+     * the underlying iterator
+     */
     Iterator<String[]> wrappedIterator = null;
+
+    /**
+     * If true, return rows of Map objects, otherwise rows of Arrays
+     */
     boolean keyed = false;
+
+    /**
+     * If true, return rows of entries in the extended format
+     */
     boolean extended = false;
+
+    /**
+     * If true, case values to Java objects
+     */
     boolean cast = true;
+
+    /**
+     * follow relations to other tables
+     */
     boolean relations = false;
+
+    /**
+     * Mapping of column indices between Schema and CSV file headers
+     */
     Map<Integer, Integer> mapping = null;
+
+    /**
+     * The index of the row when reading in `extended` mode
+     */
     int index = 0;
 
 
@@ -49,7 +85,6 @@ public class TableIterator<T> implements Iterator<T> {
         this.mapping = table.getSchemaHeaderMapping();
         this.headers = table.getHeaders();
         this.schema = table.getSchema();
-        table.validate();
         this.wrappedIterator = table.getTableDataSource().iterator();
     }
 
@@ -67,14 +102,14 @@ public class TableIterator<T> implements Iterator<T> {
     @Override
     public T next() {
         String[] row = this.wrappedIterator.next();
+        String rawVal = null;
         int rowLength = row.length;
         if (null != this.schema) {
             rowLength = Math.max(row.length, this.schema.getFields().size());
         }
         Map<String, Object> keyedRow = new LinkedHashMap<>();
         Object[] extendedRow;
-        Object[] castRow = new Object[rowLength];
-        Object[] plainRow = new Object[rowLength];
+        Object[] resultRow = new Object[rowLength];
 
         // If there's a schema, attempt to cast the row.
         if(this.schema != null){
@@ -96,29 +131,28 @@ public class TableIterator<T> implements Iterator<T> {
                 if (null != mappedKey) {
                     // if the last column(s) contain nulls, prevent an ArrayIndexOutOfBoundsException
                     if (mappedKey < row.length) {
-                        String rawVal = row[mappedKey];
+                        rawVal = row[mappedKey];
                         val = field.castValue(rawVal);
                     }
                 }
-                if (!extended && keyed) {
-                    keyedRow.put(this.headers[i], val);
-                } else if (cast || extended){
-                    castRow[i] = val;
+
+                Object endVal = cast ? val : field.formatValueAsString(val);
+
+                if (keyed) {
+                    keyedRow.put(this.headers[i], endVal);
                 } else {
-                    plainRow[i] = field.formatValueAsString(val);
+                    resultRow[i] = endVal;
                 }
             }
 
             if (extended){
-                extendedRow = new Object[]{index, this.headers, castRow};
+                extendedRow = new Object[]{index, this.headers, resultRow};
                 index++;
                 return (T)extendedRow;
             } else if(keyed){
                 return (T)keyedRow;
-            } else if(cast){
-                return (T)castRow;
             } else{
-                return (T)plainRow;
+                return (T)resultRow;
             }
         }else{
             // Enter here if no Schema has been defined.

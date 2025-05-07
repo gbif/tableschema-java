@@ -7,7 +7,6 @@ import io.frictionlessdata.tableschema.exception.TypeInferringException;
 
 import java.net.URI;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class BooleanField extends Field<Boolean> {
     @JsonIgnore
@@ -29,8 +28,8 @@ public class BooleanField extends Field<Boolean> {
     }
 
     public BooleanField(String name, String format, String title, String description,
-                        URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
-        super(name, FIELD_TYPE_BOOLEAN, format, title, description, rdfType, constraints, options);
+                        URI rdfType, Map<String, Object> constraints, Map<String, Object> options, String example){
+        super(name, FIELD_TYPE_BOOLEAN, format, title, description, rdfType, constraints, options, example);
     }
 
     public void setTrueValues(List<String> newValues) {
@@ -101,7 +100,7 @@ public class BooleanField extends Field<Boolean> {
     }
 
     @Override
-    Boolean checkMinimumContraintViolated(Boolean value) {
+    Boolean checkMinimumConstraintViolated(Boolean value) {
         return null;
     }
 

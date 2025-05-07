@@ -4,7 +4,6 @@ import io.frictionlessdata.tableschema.exception.ConstraintsException;
 import io.frictionlessdata.tableschema.exception.InvalidCastException;
 import io.frictionlessdata.tableschema.exception.TypeInferringException;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.Map;
@@ -24,8 +23,8 @@ public class IntegerField extends Field<BigInteger> {
     }
 
     public IntegerField(String name, String format, String title, String description,
-                        URI rdfType, Map<String, Object> constraints, Map<String, Object> options) {
-        super(name, FIELD_TYPE_INTEGER, format, title, description, rdfType, constraints, options);
+                        URI rdfType, Map<String, Object> constraints, Map<String, Object> options, String example) {
+        super(name, FIELD_TYPE_INTEGER, format, title, description, rdfType, constraints, options, example);
     }
 
     @Override
@@ -55,7 +54,7 @@ public class IntegerField extends Field<BigInteger> {
     }
 
     @Override
-    BigInteger checkMinimumContraintViolated(BigInteger value) {
+    BigInteger checkMinimumConstraintViolated(BigInteger value) {
         BigInteger minNumber = new BigInteger(this.constraints.get(CONSTRAINT_KEY_MINIMUM).toString());
         if( new BigInteger(value.toString()).compareTo(minNumber) < 0 ) {
             return minNumber;

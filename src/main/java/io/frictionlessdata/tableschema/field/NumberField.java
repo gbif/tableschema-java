@@ -44,8 +44,8 @@ public class NumberField extends Field<Number> {
     }
 
     public NumberField(String name, String format, String title, String description,
-                       URI rdfType, Map constraints, Map options){
-        super(name, FIELD_TYPE_NUMBER, format, title, description, rdfType, constraints, options);
+                       URI rdfType, Map constraints, Map options, String example){
+        super(name, FIELD_TYPE_NUMBER, format, title, description, rdfType, constraints, options,  example);
     }
 
     @Override
@@ -87,6 +87,7 @@ public class NumberField extends Field<Number> {
             throw new TypeInferringException();
         }
     }
+    @Override
     public Object formatValueForJson(Number value) throws InvalidCastException, ConstraintsException {
         return formatValueAsString(value, null, options);
     }
@@ -171,7 +172,7 @@ public class NumberField extends Field<Number> {
     }
 
     @Override
-    Number checkMinimumContraintViolated(Number value) {
+    Number checkMinimumConstraintViolated(Number value) {
         BigDecimal minNumber = new BigDecimal(this.constraints.get(CONSTRAINT_KEY_MINIMUM).toString());
         if( new BigDecimal(value.toString()).compareTo(minNumber) < 0 ) {
             return minNumber;

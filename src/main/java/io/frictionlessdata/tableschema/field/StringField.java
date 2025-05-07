@@ -7,6 +7,7 @@ import org.apache.commons.validator.routines.EmailValidator;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -38,8 +39,8 @@ public class StringField extends Field<String> {
     }
 
     public StringField(String name, String format, String title, String description,
-                       URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
-        super(name, FIELD_TYPE_STRING, format, title, description, rdfType, constraints, options);
+                       URI rdfType, Map<String, Object> constraints, Map<String, Object> options, String example){
+        super(name, FIELD_TYPE_STRING, format, title, description, rdfType, constraints, options,  example);
     }
 
     @Override
@@ -61,7 +62,7 @@ public class StringField extends Field<String> {
     String formatObjectValueAsString(Object value, String format, Map<String, Object> options) throws InvalidCastException, ConstraintsException {
         if (value instanceof byte[]) {
             byte[] encode = Base64.getEncoder().encode((byte[]) value);
-            String retVal = new String(encode);
+            String retVal = new String(encode, StandardCharsets.UTF_8);
             return retVal;
         }
         return value.toString();
@@ -103,7 +104,7 @@ public class StringField extends Field<String> {
     }
 
     @Override
-    String checkMinimumContraintViolated(String value) {
+    String checkMinimumConstraintViolated(String value) {
         return null;
     }
 }

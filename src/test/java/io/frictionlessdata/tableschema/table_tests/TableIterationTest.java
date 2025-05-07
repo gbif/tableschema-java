@@ -3,9 +3,9 @@ package io.frictionlessdata.tableschema.table_tests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.frictionlessdata.tableschema.Table;
-import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import io.frictionlessdata.tableschema.field.*;
 import io.frictionlessdata.tableschema.schema.Schema;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -88,7 +88,7 @@ public class TableIterationTest {
         File file = new File("data/employee_data.csv");
         Table employeeTable = Table.fromSource(file, testDataDir, employeeTableSchema, null);
 
-        Iterator iter = employeeTable.iterator(false, true, false, false);
+        Iterator iter = employeeTable.iterator(false, true, true, false);
 
         String referenceContent =
                 String.join("", Files.readAllLines(new File(testDataDir, "data/employee_data_string.json").toPath()));
@@ -262,7 +262,7 @@ public class TableIterationTest {
         Assertions.assertEquals(3, table.read().size());
         List<Object[]> actualData = table.read(true);
         for (int i = 0; i < actualData.size(); i++) {
-            Assertions.assertTrue(actualData.get(i)[2] instanceof Number, "Expected Number " +
+            Assertions.assertInstanceOf(Number.class, actualData.get(i)[2], "Expected Number " +
                     "for population figures, CR/LF problem");
         }
     }
@@ -284,7 +284,7 @@ public class TableIterationTest {
         schema.addField(isAdminField);
 
         Field addressCoordinatesField
-                = new GeopointField("addressCoordinates", Field.FIELD_FORMAT_OBJECT, null, null, null, null, null);
+                = new GeopointField("addressCoordinates", Field.FIELD_FORMAT_OBJECT, null, null, null, null, null, null);
         schema.addField(addressCoordinatesField);
 
         Field contractLengthField = new DurationField("contractLength");

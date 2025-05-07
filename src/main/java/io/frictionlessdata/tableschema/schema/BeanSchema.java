@@ -14,7 +14,7 @@ import io.frictionlessdata.tableschema.exception.TableSchemaException;
 import io.frictionlessdata.tableschema.field.*;
 import io.frictionlessdata.tableschema.util.ReflectionUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.geotools.geometry.DirectPosition2D;
+import org.geotools.geometry.Position2D;
 import org.locationtech.jts.geom.Coordinate;
 
 import java.math.BigDecimal;
@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static io.frictionlessdata.tableschema.util.ReflectionUtil.getBeanDescription;
 
+/**
+ * This replaces the normal Schema for reading a Table. It creates a Schema based on a Java Bean class.
+ */
 public class BeanSchema extends Schema {
 
     @JsonIgnore
@@ -46,6 +49,7 @@ public class BeanSchema extends Schema {
     }
 
     @JsonIgnore
+    @Override
     public String[] getHeaders() {
         List<String> retVal = new ArrayList<>();
         Iterator<CsvSchema.Column> iterator = csvSchema.iterator();
@@ -55,6 +59,7 @@ public class BeanSchema extends Schema {
         return retVal.toArray(new String[]{});
     }
 
+    @Override
     public Field<?> getField(String name) {
         return fieldMap.get(name);
     }
@@ -143,7 +148,7 @@ public class BeanSchema extends Schema {
                                 || (declaredClass.equals(OffsetTime.class)))
                             field = new TimeField(name);
                         else if ((declaredClass.equals(Coordinate.class))
-                                || (declaredClass.equals(DirectPosition2D.class)))
+                                || (declaredClass.equals(Position2D.class)))
                             field = new GeopointField(name);
                         else if (declaredClass.equals(JsonNode.class))
                             field = new ObjectField(name);

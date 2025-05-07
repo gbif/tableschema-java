@@ -1,8 +1,6 @@
 package io.frictionlessdata.tableschema.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
@@ -42,6 +40,9 @@ public final class JsonUtil {
 		}
 		return instance;
 	}
+
+	public ObjectMapper getMapper(){return mapper;}
+
 
 	public ObjectNode createNode() {
 		return mapper.createObjectNode();
@@ -137,6 +138,10 @@ public final class JsonUtil {
 		} catch (IOException e) {
 			throw new JsonParsingException(e);
 		}
+	}
+
+	public <T> T convertValue(Object value, TypeReference<T> ref) {
+		return mapper.convertValue(value, ref);
 	}
 	
 	public <T> T convertValue(Object value, Class<T> clazz) {

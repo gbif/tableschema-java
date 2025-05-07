@@ -19,8 +19,8 @@ public class DurationField extends Field<Duration> {
     }
 
     public DurationField(String name, String format, String title, String description,
-                         URI rdfType, Map<String, Object> constraints, Map<String, Object> options){
-        super(name, FIELD_TYPE_DURATION, format, title, description, rdfType, constraints, options);
+                         URI rdfType, Map<String, Object> constraints, Map<String, Object> options, String example){
+        super(name, FIELD_TYPE_DURATION, format, title, description, rdfType, constraints, options, example);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class DurationField extends Field<Duration> {
     }
 
     @Override
-    Duration checkMinimumContraintViolated(Duration value) {
+    Duration checkMinimumConstraintViolated(Duration value) {
         Duration minDuration = (Duration)this.constraints.get(CONSTRAINT_KEY_MINIMUM);
         if(value.compareTo(minDuration) < 0){
             return minDuration;

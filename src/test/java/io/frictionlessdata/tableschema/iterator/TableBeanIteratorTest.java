@@ -6,10 +6,9 @@ import io.frictionlessdata.tableschema.beans.EmployeeBean;
 import io.frictionlessdata.tableschema.beans.EmployeeBeanWithAnnotation;
 import io.frictionlessdata.tableschema.beans.GrossDomesticProductBean;
 import io.frictionlessdata.tableschema.beans.NumbersBean;
-import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import io.frictionlessdata.tableschema.field.DateField;
-import io.frictionlessdata.tableschema.schema.BeanSchema;
 import io.frictionlessdata.tableschema.schema.Schema;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -93,12 +92,6 @@ class TableBeanIteratorTest {
         Assertions.assertEquals(2, interests.size());
         Assertions.assertEquals("sports", interests.get(0));
         Assertions.assertEquals("reading", interests.get(1));
-
-        Object info = frank.getInfo();
-        /*Assertions.assertEquals(45, info.get("pin"));
-        Assertions.assertEquals(83.23, info.get("rate"));
-        Assertions.assertEquals(90, info.get("ssn"));*/
-        System.out.println(info);
     }
 
     @Test

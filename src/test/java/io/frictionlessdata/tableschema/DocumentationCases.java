@@ -2,10 +2,10 @@ package io.frictionlessdata.tableschema;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.frictionlessdata.tableschema.beans.SimpleDataBean;
-import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import io.frictionlessdata.tableschema.field.*;
 import io.frictionlessdata.tableschema.iterator.BeanIterator;
 import io.frictionlessdata.tableschema.schema.Schema;
+import io.frictionlessdata.tableschema.tabledatasource.TableDataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -181,7 +181,7 @@ class DocumentationCases {
          */
 
         ObjectMapper objectMapper = new ObjectMapper();
-        Object jsonObject = objectMapper.readValue(schema.getJson(), Object.class);
+        Object jsonObject = objectMapper.readValue(schema.asJson(), Object.class);
         String expectedString = TestHelper.getResourceFileContent(
                 "/fixtures/schema/documentation-cases/employee_schema_simple.json");
         assertEquals(objectMapper.readValue(expectedString, Object.class), jsonObject);
@@ -208,7 +208,7 @@ class DocumentationCases {
             + Field.FIELD_FORMAT_ARRAY + "\"}";
         schema.addField(coordinatesFieldJson);
 
-        System.out.println(schema.getJson());
+        System.out.println(schema.asJson());
         /*
         {"fields":[
             {"name":"name","format":"default","type":"string"},
@@ -242,7 +242,7 @@ class DocumentationCases {
          */
 
         ObjectMapper objectMapper = new ObjectMapper();
-        Object jsonObject = objectMapper.readValue(schema.getJson(), Object.class);
+        Object jsonObject = objectMapper.readValue(schema.asJson(), Object.class);
         String expectedString = TestHelper.getResourceFileContent(
                 "/fixtures/schema/documentation-cases/simple_data_schema_no_title.json");
         assertEquals(objectMapper.readValue(expectedString, Object.class), jsonObject);
