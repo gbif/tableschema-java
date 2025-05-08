@@ -108,6 +108,9 @@
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
+                        <configuration>
+                            <classifier>sources</classifier>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -121,7 +124,6 @@
                     <quiet>true</quiet>
                     <encoding>UTF-8</encoding>
                     <source>${java.version}</source>
-
                 </configuration>
                 <executions>
                     <execution>
