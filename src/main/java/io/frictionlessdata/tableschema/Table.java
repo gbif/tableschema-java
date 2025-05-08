@@ -24,6 +24,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a CSV or JSON-array encoded  table with optional CSV specification
@@ -518,7 +519,7 @@ public class Table{
                     ? format
                     : TableDataSource.getDefaultCsvFormat();
 
-            locFormat = locFormat.builder().setHeader(headerNames).get();
+            locFormat = locFormat.builder().setHeader(headerNames).build();
             CSVPrinter csvPrinter = new CSVPrinter(out, locFormat);
 
             String[] headers = getHeaders();
@@ -555,7 +556,7 @@ public class Table{
                 try {
                     String[] headers;
                     if (null != schema) {
-                        List<String> fieldNames = schema.getFields().stream().map(Field::getName).toList();
+                        List<String> fieldNames = schema.getFields().stream().map(Field::getName).collect(Collectors.toList());
                         headers = fieldNames.toArray(new String[0]);
                     } else {
                         headers = dataSource.getHeaders();
@@ -630,7 +631,7 @@ public class Table{
         if (null == headers) {
             return;
         }
-        List<String> declaredHeaders = schema.getFields().stream().map(Field::getName).toList();
+        List<String> declaredHeaders = schema.getFields().stream().map(Field::getName).collect(Collectors.toList());
         List<String> foundHeaders = Arrays.asList(headers);
         // If we have JSON data, fields with `null` values might be omitted, therefore do not do a strict check
         // NOTE: Remove the check - otherwise it checks whether all the headers are present
@@ -806,7 +807,7 @@ public class Table{
                     ? format
                     : TableDataSource.getDefaultCsvFormat();
 
-            locFormat = locFormat.builder().setHeader(sortedHeaders).get();
+            locFormat = locFormat.builder().setHeader(sortedHeaders).build();
             CSVPrinter csvPrinter = new CSVPrinter(out, locFormat);
 
             String[] headers = getHeaders();

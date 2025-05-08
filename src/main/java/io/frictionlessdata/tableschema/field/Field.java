@@ -286,8 +286,9 @@ public abstract class Field<T> {
                     }
 
                     Map<String, Object> violatedConstraints = checkConstraintViolations(castValue);
+                    String violatedConstraintNames = String.join(", ", violatedConstraints.keySet());
                     if (!violatedConstraints.isEmpty()) {
-                        throw new ConstraintsException("Field [" + this.name + "] value [" + value + "] violates constraint(s) " + violatedConstraints);
+                        throw new ConstraintsException("Field '" + this.name + "' value '" + value + "' violates constraint(s) [" + violatedConstraintNames+"]");
                     }
                 }
 
@@ -295,7 +296,7 @@ public abstract class Field<T> {
             } catch (ConstraintsException ce) {
                 throw ce;
             } catch (TypeInferringException e) {
-                throw new InvalidCastException("Field [" + this.name + "] provided value [" + value + "] is not of [" + type + "] type.");
+                throw new InvalidCastException("Field '" + this.name + "' provided value '" + value + "' is not of '" + type + "' type.");
             } catch (Exception e) {
                 throw new InvalidCastException(e);
             }
@@ -679,47 +680,6 @@ public abstract class Field<T> {
         }
         return Objects.equals(constraints, other.constraints);
     }
-
-    /**
-     * Use the Field definition to cast (=parse) a value into the Field type. Constraints enforcing
-     * can be switched on or off.
-     * @param value the value string to cast
-     * @param enforceConstraints whether to enforce Field constraints
-     * @param options casting options
-     * @return result of the cast operation
-     * @throws InvalidCastException if the content of `value` cannot be cast to the destination type
-     * @throws ConstraintsException thrown if `enforceConstraints` was set to `true`and constraints were violated
-     */
-    T castValue(String value, boolean enforceConstraints, Map<String, Object> options) throws InvalidCastException, ConstraintsException{
-        if(this.type.isEmpty()){
-            throw new InvalidCastException("Property 'type' must not be empty");
-        } else if (StringUtils.isEmpty(value)) {
-            return null;
-        } else {
-            try{
-                T castValue = parseValue(value, format, options);
-
-                // Check for constraint violations
-                if(enforceConstraints && this.constraints != null){
-                    Map<String, Object> violatedConstraints = checkConstraintViolations(castValue);
-                    if(!violatedConstraints.isEmpty()){
-                        String violatedConstraintNames = String.join(", ", violatedConstraints.keySet());
-                        throw new ConstraintsException("Field '" + this.name + "' value '" + value + "' violates constraint(s) [" + violatedConstraintNames+"]");
-                    }
-                }
-
-                return castValue;
-
-            } catch(ConstraintsException ce){
-                throw ce;
-            } catch (TypeInferringException e) {
-                throw new InvalidCastException("Field '" + this.name + "' provided value '" + value + "' is not of '" + type + "' type.");
-            } catch(Exception e){
-                throw new InvalidCastException(e);
-            }
-        }
-    }
-
 
     private boolean isWellKnownType(String typeName) {
         return wellKnownFieldTypes.contains(typeName);
