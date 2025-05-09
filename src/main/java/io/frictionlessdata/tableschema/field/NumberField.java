@@ -174,7 +174,7 @@ public class NumberField extends Field<Number> {
     @Override
     Number checkMinimumConstraintViolated(Number value) {
         BigDecimal minNumber = new BigDecimal(this.constraints.get(CONSTRAINT_KEY_MINIMUM).toString());
-        if( new BigDecimal(value.toString()).compareTo(minNumber) < 0 ) {
+        if (value != null && new BigDecimal(value.toString()).compareTo(minNumber) < 0) {
             return minNumber;
         }
         return null;
