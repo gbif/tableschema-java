@@ -28,6 +28,7 @@ public final class JsonUtil {
 			.enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
 			.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
 			.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+			.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 			.findAndAddModules()
 			.build()
 			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
