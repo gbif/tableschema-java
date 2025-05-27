@@ -835,26 +835,36 @@ public class Table{
      */
     private void writeCSVData(Map<Integer, Integer> mapping, Schema schema, CSVPrinter csvPrinter) {
         Iterator<Object> iter = this.iterator(false, false, true, false);
-        iter.forEachRemaining((rec) -> {
-            Object[] row = (Object[])rec;
-            Object[] sortedRec = new Object[row.length];
-            for (int i = 0; i < row.length; i++) {
-                sortedRec[mapping.get(i)] = row[i];
-            }
-            List<String> obj = new ArrayList<>();
-            int i = 0;
-            for (Field field : schema.getFields()) {
-                Object s = sortedRec[i];
-                obj.add(field.formatValueAsString(s));
-                i++;
-            }
+        int[] rowCounter = {0};
+        try {
+            iter.forEachRemaining((rec) -> {
+                rowCounter[0]++;
+                Object[] row = (Object[]) rec;
+                Object[] sortedRec = new Object[row.length];
+                for (int i = 0; i < row.length; i++) {
+                    sortedRec[mapping.get(i)] = row[i];
+                }
+                List<String> obj = new ArrayList<>();
+                int i = 0;
+                for (Field field : schema.getFields()) {
+                    Object s = sortedRec[i];
+                    obj.add(field.formatValueAsString(s));
+                    i++;
+                }
 
-            try {
-                csvPrinter.printRecord(obj);
-            } catch (Exception ex) {
-                throw new TableIOException(ex);
-            }
-        });
+                try {
+                    csvPrinter.printRecord(obj);
+                } catch (Exception ex) {
+                    throw new TableIOException(ex);
+                }
+            });
+        } catch (ConstraintsException ex) {
+            // starting from 1 + header row
+            int actualLineNumber = rowCounter[0] + 2;
+            String fileName = schema.getReference().getFileName();
+            String updatedErrorMessage = ex.getMessage() + ". " + fileName + " , line: " + actualLineNumber;
+            throw new ConstraintsException(updatedErrorMessage);
+        }
     }
 
     /**
