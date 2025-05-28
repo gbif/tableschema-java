@@ -862,8 +862,14 @@ public class Table{
             // starting from 1 + header row
             int actualLineNumber = rowCounter[0] + 2;
             String fileName = schema.getReference().getFileName();
-            String updatedErrorMessage = ex.getMessage() + ". " + fileName + " , line: " + actualLineNumber;
+            String updatedErrorMessage = ex.getMessage() + ". " + fileName + " line: " + actualLineNumber;
             throw new ConstraintsException(updatedErrorMessage);
+        } catch (InvalidCastException ex) {
+            // starting from 1 + header row
+            int actualLineNumber = rowCounter[0] + 2;
+            String fileName = schema.getReference().getFileName();
+            String updatedErrorMessage = ex.getMessage() + " " + fileName + " line: " + actualLineNumber;
+            throw new InvalidCastException(updatedErrorMessage);
         }
     }
 
