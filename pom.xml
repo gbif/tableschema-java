@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.frictionlessdata</groupId>
     <artifactId>tableschema-java</artifactId>
-    <version>0.9.2.2-gbif-SNAPSHOT</version>
+    <version>0.9.6-gbif-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <issueManagement>
@@ -37,14 +37,14 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.compiler>${java.version}</maven.compiler.compiler>
         <google-guava.version>33.4.8-jre</google-guava.version>
-        <apache-commons-lang3.version>3.17.0</apache-commons-lang3.version>
+        <apache-commons-lang3.version>3.18.0</apache-commons-lang3.version>
         <apache-commons-csv.version>1.14.0</apache-commons-csv.version>
-        <apache-commons-validator.version>1.9.0</apache-commons-validator.version>
-        <geotools.version>33.0</geotools.version>
-        <jackson.version>2.19.0</jackson.version>
-        <junit.version>5.12.2</junit.version>
+        <apache-commons-validator.version>1.10.0</apache-commons-validator.version>
+        <geotools.version>33.2</geotools.version>
+        <jackson.version>2.19.2</jackson.version>
+        <junit.version>5.13.4</junit.version>
         <locationtech-jts.version>1.20.0</locationtech-jts.version>
-        <networknt-validator-version>1.5.6</networknt-validator-version>
+        <networknt-validator-version>1.5.8</networknt-validator-version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
@@ -145,7 +145,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.9.3.0</version>
+                <version>4.9.3.2</version>
                 <configuration>
                     <effort>Max</effort>
                     <threshold>High</threshold>
