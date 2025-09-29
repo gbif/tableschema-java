@@ -134,13 +134,22 @@ public class ForeignKey {
 
             Iterator<Object> iterator = table.iterator(true, false, false, false);
             while (iterator.hasNext()) {
-                Map<String, Object> next = (Map<String, Object>)iterator.next();
-                for (int i = 0; i < fieldNames.size(); i++){
-                    if (!next.get(fieldNames.get(i)).equals(next.get(foreignFieldNames.get(i)))) {
-                        throw new ForeignKeyException("Foreign key ["+fieldNames.get(i)+ "-> "
-                                +foreignFieldNames.get(i)+"] violation : expected: "
-                                +next.get(fieldNames.get(i)) + " found: "
-                                +next.get(foreignFieldNames.get(i)));
+                Map<String, Object> next = (Map<String, Object>) iterator.next();
+                for (int i = 0; i < fieldNames.size(); i++) {
+                    Object localVal = next.get(fieldNames.get(i));
+                    Object foreignVal = next.get(foreignFieldNames.get(i));
+
+                    // Skip validation if local value is null (nullable FK)
+                    if (localVal == null) {
+                        continue;
+                    }
+
+                    // Only throw if foreign value is non-null and doesn't match local value
+                    if (!localVal.equals(foreignVal)) {
+                        throw new ForeignKeyException(
+                                "Foreign key [" + fieldNames.get(i) + " -> " + foreignFieldNames.get(i) + "] violation: "
+                                        + "expected " + localVal + " found " + foreignVal
+                        );
                     }
                 }
             }

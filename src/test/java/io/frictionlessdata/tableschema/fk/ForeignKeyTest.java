@@ -53,7 +53,7 @@ public class ForeignKeyTest {
                 CSVFormat.DEFAULT.builder().setHeader().get());
         ForeignKeyException fke = assertThrows(ForeignKeyException.class, ()
                 -> schema.getForeignKeys().get(0).validate(table));
-        Assertions.assertEquals("Foreign key [check_year-> year] violation : expected: 2018 found: 2017",
+        Assertions.assertEquals("Foreign key [check_year -> year] violation: expected 2018 found 2017",
                 fke.getMessage());
     }
 
@@ -76,9 +76,9 @@ public class ForeignKeyTest {
         Assertions.assertFalse(valE.getWrappedExceptions().isEmpty());
         Exception fke = valE.getWrappedExceptions().get(0);
         Assertions.assertInstanceOf(ForeignKeyException.class, fke);
-        Assertions.assertEquals("Foreign key [check_year-> year] violation : expected: 2018 found: 2017",
+        Assertions.assertEquals("Foreign key [check_year -> year] violation: expected 2018 found 2017",
                 fke.getMessage());
-        Assertions.assertEquals("Validation failed with ForeignKeyException: Foreign key [check_year-> year] violation : expected: 2018 found: 2017",
+        Assertions.assertEquals("Validation failed with ForeignKeyException: Foreign key [check_year -> year] violation: expected 2018 found 2017",
                 valE.getMessage());
 
     }
