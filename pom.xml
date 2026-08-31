@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.frictionlessdata</groupId>
     <artifactId>tableschema-java</artifactId>
@@ -15,7 +16,7 @@
         <url>https://github.com/gbif/tableschema-java</url>
         <connection>scm:git:git://github.com/gbif/tableschema-java.git</connection>
         <developerConnection>scm:git:git@github.com:gbif/tableschema-java.git</developerConnection>
-      <tag>HEAD</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
@@ -95,7 +96,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
-                <configuration />
+                <configuration/>
             </plugin>
 
             <plugin>
@@ -156,6 +157,44 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.networknt</pattern>
+                                    <shadedPattern>io.frictionlessdata.tableschema.shaded.com.networknt</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <!-- optional: avoid shading everything, just this artifact -->
+                            <artifactSet>
+                                <includes>
+                                    <include>com.networknt:json-schema-validator</include>
+                                </includes>
+                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
